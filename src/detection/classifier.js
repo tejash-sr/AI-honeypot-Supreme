@@ -54,10 +54,11 @@ const SCAM_PATTERNS = {
   },
   lottery_scam: {
     patterns: [
-      /won|winner|prize|lottery|reward/i, /claim.*prize/i,
-      /lucky.*draw/i, /congratulat/i, /selected.*winner/i,
+      /won.*prize|winner.*prize|lottery.*won/i, /claim.*prize/i,
+      /lucky.*draw/i, /selected.*winner.*prize/i,
+      /lottery.*winner/i, /prize.*money/i,
     ],
-    hindi_patterns: [/इनाम|लॉटरी|जीत/i, /बधाई/i],
+    hindi_patterns: [/इनाम|लॉटरी|जीत.*इनाम/i, /बधाई.*जीत/i],
     tactics: ['greed', 'urgency', 'excitement'],
     weight: 2,
   },
@@ -66,10 +67,13 @@ const SCAM_PATTERNS = {
       /job.*offer|hiring|vacancy|salary/i, /work.*from.*home/i,
       /earn.*per.*day/i, /part.*time.*job/i, /easy.*money/i,
       /guaranteed.*income/i, /no.*experience/i,
+      /selected.*job|selected.*position/i, /registration.*fee/i,
+      /training.*fee/i, /joining.*fee/i, /wfh.*job/i,
+      /salary.*month|salary.*day/i, /job.*selected/i,
     ],
-    hindi_patterns: [/नौकरी|काम|कमाई/i],
-    tactics: ['greed', 'hope', 'urgency'],
-    weight: 2,
+    hindi_patterns: [/नौकरी|काम|कमाई/i, /सैलरी/i],
+    tactics: ['greed', 'hope', 'urgency', 'financial_request'],
+    weight: 3,
   },
   phishing: {
     patterns: [

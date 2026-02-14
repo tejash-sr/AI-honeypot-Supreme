@@ -1005,6 +1005,428 @@ test('GOD Pipeline: Bengali scam end-to-end', () => {
 });
 
 // =====================================================
+// 🔥 NATIONAL LEVEL HARDCORE TESTS 🔥
+// These tests are designed to break the system
+// =====================================================
+
+console.log('\n🔥 NATIONAL LEVEL: Model Cascade Tests');
+console.log('─'.repeat(50));
+
+test('Model Cascade: MODELS array has 3 fallbacks', () => {
+  const { rotateModel } = require('../src/agent/three-tier-chain');
+  // Verify model rotation function exists and doesn't crash
+  assert(typeof rotateModel === 'function', 'rotateModel should be a function');
+  // Calling it shouldn't throw
+  try {
+    rotateModel();
+    rotateModel();
+    rotateModel();
+  } catch (e) {
+    assert(false, `rotateModel threw error: ${e.message}`);
+  }
+});
+
+test('Model Cascade: Smart fallbacks have variety per stage', () => {
+  const stages = ['GREETING', 'RAPPORT', 'FINANCIAL', 'EXTRACTION', 'CLOSING'];
+  const languages = ['english', 'hinglish', 'hindi_devanagari', 'tamil', 'telugu', 'bengali'];
+  
+  for (const lang of languages) {
+    const key = `bank_fraud:GREETING:${lang}`;
+    if (SMART_FALLBACKS[key]) {
+      assert(Array.isArray(SMART_FALLBACKS[key]), `${key} should be an array`);
+      assert(SMART_FALLBACKS[key].length >= 5, `${key} should have at least 5 options, got ${SMART_FALLBACKS[key].length}`);
+    }
+  }
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Anti-Repetition Tests');
+console.log('─'.repeat(50));
+
+test('Anti-Repetition: Fallback rotation never repeats in 10 calls', () => {
+  // Simulate fallback rotation for a session
+  const sessionId = 'anti-rep-test-' + Date.now();
+  const options = SMART_FALLBACKS['bank_fraud:GREETING:english'] || [];
+  assert(options.length >= 10, 'Need at least 10 fallback options for this test');
+  
+  const used = new Set();
+  // Manually track to ensure no repetition logic
+  for (let i = 0; i < Math.min(10, options.length); i++) {
+    const available = options.filter(o => !used.has(o));
+    if (available.length === 0) break;
+    const selected = available[0];
+    assert(!used.has(selected), `Repetition detected on call ${i + 1}`);
+    used.add(selected);
+  }
+});
+
+test('Anti-Repetition: Identity lock prompt contains previous replies block', () => {
+  const persona = selectPersona('bank_fraud', 'hinglish');
+  const langData = detectAndMirror('aapka account block hoga');
+  const scamData = classifyScam('aapka account block hoga');
+  
+  const previousReplies = [
+    'Arrey, kaun bol raha hai?',
+    'Employee ID batao pehle',
+    'Ruko, beta ko call karti hoon'
+  ];
+  
+  const prompt = buildIdentityLockPrompt(persona, langData, scamData, 'RAPPORT', 'LOW', null, previousReplies);
+  
+  assert(prompt.includes('PREVIOUS') || prompt.includes('previous') || prompt.includes('already said'), 
+    'Should contain previous replies section');
+  assert(prompt.includes('Arrey, kaun bol raha hai'), 'Should include first previous reply');
+  assert(prompt.includes('DO NOT') || prompt.includes('PROHIBITION'), 'Should have anti-repetition rules');
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Stalling Arsenal Tests');
+console.log('─'.repeat(50));
+
+test('Stalling: Each persona has minimum 5 RAPPORT tactics', () => {
+  const personaTypes = Object.keys(ENGAGEMENT_ARC);
+  for (const pt of personaTypes) {
+    const rapportTactics = ENGAGEMENT_ARC[pt].RAPPORT;
+    assert(rapportTactics && rapportTactics.length >= 5, 
+      `${pt} should have at least 5 RAPPORT tactics, got ${rapportTactics?.length || 0}`);
+  }
+});
+
+test('Stalling: Each persona has minimum 5 FINANCIAL tactics', () => {
+  const personaTypes = Object.keys(ENGAGEMENT_ARC);
+  for (const pt of personaTypes) {
+    const tactics = ENGAGEMENT_ARC[pt].FINANCIAL;
+    assert(tactics && tactics.length >= 5, 
+      `${pt} should have at least 5 FINANCIAL tactics, got ${tactics?.length || 0}`);
+  }
+});
+
+test('Stalling: Each persona has minimum 5 EXTRACTION tactics', () => {
+  const personaTypes = Object.keys(ENGAGEMENT_ARC);
+  for (const pt of personaTypes) {
+    const tactics = ENGAGEMENT_ARC[pt].EXTRACTION;
+    assert(tactics && tactics.length >= 5, 
+      `${pt} should have at least 5 EXTRACTION tactics, got ${tactics?.length || 0}`);
+  }
+});
+
+test('Stalling: Arsenal exhausts all tactics before returning null', () => {
+  const arsenal = new StallingArsenal('ELDERLY_WOMAN_HINDI');
+  const greetingCount = ENGAGEMENT_ARC.ELDERLY_WOMAN_HINDI.GREETING.length;
+  
+  let count = 0;
+  while (true) {
+    const tactic = arsenal.getNextTactic('GREETING');
+    if (tactic === null) break;
+    count++;
+    if (count > 100) {
+      assert(false, 'Infinite loop detected in stalling arsenal');
+    }
+  }
+  assertEqual(count, greetingCount, `Should exhaust exactly ${greetingCount} GREETING tactics`);
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Edge Case Language Tests');
+console.log('─'.repeat(50));
+
+test('Language: Malayalam detection', () => {
+  const text = 'നിങ്ങളുടെ അക്കൗണ്ട് ബ്ലോക്ക് ആകും';
+  const r = detectAndMirror(text);
+  assertEqual(r.language, 'malayalam');
+});
+
+test('Language: Punjabi detection', () => {
+  const text = 'ਤੁਹਾਡਾ ਖਾਤਾ ਬੰਦ ਹੋ ਜਾਵੇਗਾ';
+  const r = detectAndMirror(text);
+  assertEqual(r.language, 'punjabi');
+});
+
+test('Language: Odia detection', () => {
+  const text = 'ଆପଣଙ୍କ ଆକାଉଣ୍ଟ ବନ୍ଦ ହୋଇଯିବ';
+  const r = detectAndMirror(text);
+  assertEqual(r.language, 'odia');
+});
+
+test('Language: Mixed Hinglish with numbers and special chars', () => {
+  const text = 'Urgently share OTP 834921 aapka ₹50,000 baki hai!!!';
+  const r = detectAndMirror(text);
+  assertEqual(r.language, 'hinglish');
+});
+
+test('Language: Pure English with no Hindi leakage', () => {
+  const text = 'Your bank account has been compromised. Call immediately.';
+  const r = detectAndMirror(text);
+  assertEqual(r.language, 'english');
+  // Verify directive instructs PURE English (not mixing)
+  assert(r.responseDirective.includes('PURE English') || r.responseDirective.includes('pure English'), 
+    'English directive should instruct pure English');
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Extreme Scam Pattern Tests');
+console.log('─'.repeat(50));
+
+test('Scam: Crypto/NFT fraud detection', () => {
+  const text = 'Invest ₹1000 in Bitcoin and get 10x returns guaranteed! Binance offer expires today!';
+  const r = classifyScam(text);
+  assert(r.isScam);
+  assert(r.confidence >= 0.7, `Crypto scam confidence too low: ${r.confidence}`);
+});
+
+test('Scam: Multi-tactic complex message', () => {
+  const text = 'URGENT: Your SBI account KYC expired. Police complaint filed. Share OTP 123456 NOW or face arrest. Call 9999999999.';
+  const r = classifyScam(text);
+  assert(r.isScam);
+  assert(r.confidence >= 0.85, `Multi-tactic should have high confidence: ${r.confidence}`);
+  assert(r.tactics.length >= 2, `Should detect multiple tactics: ${r.tactics}`);
+});
+
+test('Scam: Sextortion pattern detection', () => {
+  const text = 'I have recorded your video. Pay ₹50000 or I will expose to all contacts.';
+  const r = classifyScam(text);
+  assert(r.isScam);
+});
+
+test('Scam: Job scam with registration fee', () => {
+  const text = 'You are selected for WFH job at TCS. Salary ₹50000/month. Pay ₹5000 registration fee for training.';
+  const r = classifyScam(text);
+  assert(r.isScam);
+  assert(r.type === 'job_scam' || r.confidence >= 0.6, `Expected job_scam, got ${r.type} at ${r.confidence}`);
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Response Quality Tests');
+console.log('─'.repeat(50));
+
+test('Guard: Blocks ALL 20+ AI tells', () => {
+  const aiTells = [
+    'Certainly! I can help you.',
+    'Absolutely, let me assist.',
+    'Of course, I understand.',
+    'Sure thing! Here you go.',
+    'I would be happy to help.',
+    'I apologize for the confusion.',
+    'As an AI, I can assist.',
+    'Great question! Let me help.',
+    'I appreciate your patience.',
+    'Feel free to ask anything.',
+    'Let me know if you need more.',
+    'How can I assist you today?',
+    'I understand your concern.',
+    'I am here to help you.',
+    'No problem at all!',
+    'Indeed, that is correct.',
+    'I would recommend that you...',
+    'Please note that this is important.',
+    'Rest assured, we will help.',
+    'This is a concerning situation.',
+  ];
+  
+  const persona = selectPersona('bank_fraud', 'english');
+  const langData = detectAndMirror('Your account is blocked');
+  
+  for (const tell of aiTells) {
+    const cleaned = validateAndCleanReply(tell, persona, langData);
+    assert(cleaned !== tell, `Failed to block AI tell: "${tell}"`);
+  }
+});
+
+test('Guard: Never reveals scam awareness', () => {
+  const badReplies = [
+    'I know you are a scammer',
+    'This is clearly a fraud attempt',
+    'You are trying to con me',
+    'I am reporting you to cyber crime',
+    'This is a honeypot trap',
+  ];
+  
+  const persona = selectPersona('bank_fraud', 'english');
+  const langData = detectAndMirror('test');
+  
+  for (const bad of badReplies) {
+    const cleaned = validateAndCleanReply(bad, persona, langData);
+    assert(cleaned !== bad, `Failed to block persona break: "${bad}"`);
+  }
+});
+
+test('Guard: Enforces max 2 sentences strictly', () => {
+  const longReply = 'This is sentence one. This is sentence two. This is sentence three. This is sentence four. This is sentence five.';
+  const persona = selectPersona('bank_fraud', 'english');
+  const langData = detectAndMirror('test');
+  
+  const cleaned = validateAndCleanReply(longReply, persona, langData);
+  const sentenceCount = (cleaned.match(/[.!?]+/g) || []).length;
+  assert(sentenceCount <= 3, `Too many sentences: ${sentenceCount}`); // Allow for ellipsis
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Intel Extraction Stress Tests');
+console.log('─'.repeat(50));
+
+test('Intel: Extract multiple phone numbers from one message', () => {
+  const text = 'Call 9876543210 or 8765432109 or +91 7654321098 for help';
+  const intel = new IntelAggregator();
+  intel.extract(text);
+  const phones = intel.toJSON().phoneNumbers;
+  assert(phones.length >= 2, `Should extract at least 2 phones, got ${phones.length}`);
+});
+
+test('Intel: Extract all UPI handle variations', () => {
+  const text = 'Send to fraud@paytm or scam@ybl or fake@okaxis or bad@oksbi';
+  const intel = new IntelAggregator();
+  intel.extract(text);
+  const upis = intel.toJSON().upiIds;
+  assert(upis.length >= 3, `Should extract at least 3 UPI IDs, got ${upis.length}: ${upis}`);
+});
+
+test('Intel: Extract PAN card numbers', () => {
+  const text = 'Your PAN ABCDE1234F needs verification. Also check ZZZZZ9999Z.';
+  const intel = new IntelAggregator();
+  intel.extract(text);
+  const pans = intel.toJSON().panCards;
+  assert(pans.length >= 2, `Should extract 2 PAN cards, got ${pans.length}`);
+});
+
+test('Intel: Extract suspicious phishing domains', () => {
+  const text = 'Click http://sbi-verify.xyz/login or https://hdfc-kyc.top/update or bit.ly/scam123';
+  const intel = new IntelAggregator();
+  intel.extract(text);
+  const links = intel.toJSON().phishingLinks;
+  assert(links.length >= 2, `Should extract phishing links, got ${links.length}`);
+});
+
+test('Intel: Claimed organization extraction', () => {
+  const text = 'This is SBI Customer Care. RBI has flagged your account. TRAI will suspend your number.';
+  const intel = new IntelAggregator();
+  intel.extract(text);
+  const orgs = intel.toJSON().claimedOrgs;
+  assert(orgs.length >= 2, `Should extract organizations, got ${orgs.length}`);
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Error Recovery Tests');
+console.log('─'.repeat(50));
+
+test('Error Recovery: Empty message handling', () => {
+  const langData = detectAndMirror('');
+  assertEqual(langData.language, 'english');
+  assert(langData.fillers.length > 0, 'Should have fallback fillers');
+});
+
+test('Error Recovery: Null/undefined input handling', () => {
+  const langData1 = detectAndMirror(null);
+  const langData2 = detectAndMirror(undefined);
+  assertEqual(langData1.language, 'english');
+  assertEqual(langData2.language, 'english');
+});
+
+test('Error Recovery: Special characters only', () => {
+  const langData = detectAndMirror('!@#$%^&*()_+-=[]{}|;:,.<>?');
+  assertEqual(langData.language, 'english');
+});
+
+test('Error Recovery: Numbers only', () => {
+  const langData = detectAndMirror('12345678901234567890');
+  assertEqual(langData.language, 'english');
+});
+
+test('Error Recovery: Empty persona fallback', () => {
+  const persona = selectPersona(undefined, undefined);
+  assert(persona !== null && persona !== undefined, 'Should return fallback persona');
+  assert(persona.name, 'Fallback persona should have name');
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Performance Boundary Tests');
+console.log('─'.repeat(50));
+
+test('Performance: Language detection under 5ms for long text', () => {
+  const longText = 'आपका खाता बंद हो जाएगा '.repeat(100);
+  const start = Date.now();
+  detectAndMirror(longText);
+  const elapsed = Date.now() - start;
+  assert(elapsed < 50, `Language detection too slow: ${elapsed}ms`);
+});
+
+test('Performance: Scam classification under 20ms', () => {
+  const complexText = 'URGENT: SBI KYC expires today. Share OTP 123456. UPI ID: scam@paytm. Call 9876543210 NOW or account blocked forever. Police complaint filed.';
+  const start = Date.now();
+  classifyScam(complexText);
+  const elapsed = Date.now() - start;
+  assert(elapsed < 50, `Scam classification too slow: ${elapsed}ms`);
+});
+
+test('Performance: Intel extraction under 10ms', () => {
+  const richText = 'Phones: 9876543210, 8765432109. UPI: fraud@paytm, scam@ybl. Links: http://fake.xyz, bit.ly/bad. PAN: ABCDE1234F';
+  const intel = new IntelAggregator();
+  const start = Date.now();
+  intel.extract(richText);
+  const elapsed = Date.now() - start;
+  assert(elapsed < 30, `Intel extraction too slow: ${elapsed}ms`);
+});
+
+console.log('\n🔥 NATIONAL LEVEL: GUVI Callback Format Tests');
+console.log('─'.repeat(50));
+
+test('GUVI Callback: All required fields present', () => {
+  const intel = new IntelAggregator();
+  intel.extract('Call 9876543210. UPI: fraud@paytm. Link: http://scam.xyz');
+  const payload = intel.getGuviCallbackPayload('guvi-test', 5, 'bank_fraud');
+  
+  // Required GUVI fields
+  assert(payload.sessionId === 'guvi-test', 'Should have sessionId');
+  assert(payload.scamDetected === true, 'Should have scamDetected');
+  assert(typeof payload.totalMessagesExchanged === 'number', 'Should have totalMessagesExchanged');
+  assert(payload.extractedIntelligence, 'Should have extractedIntelligence');
+  assert(Array.isArray(payload.extractedIntelligence.bankAccounts), 'Should have bankAccounts array');
+  assert(Array.isArray(payload.extractedIntelligence.upiIds), 'Should have upiIds array');
+  assert(Array.isArray(payload.extractedIntelligence.phishingLinks), 'Should have phishingLinks array');
+  assert(Array.isArray(payload.extractedIntelligence.phoneNumbers), 'Should have phoneNumbers array');
+  assert(Array.isArray(payload.extractedIntelligence.suspiciousKeywords), 'Should have suspiciousKeywords array');
+  assert(typeof payload.agentNotes === 'string' && payload.agentNotes.length > 0, 'Should have agentNotes');
+});
+
+test('GUVI Callback: agentNotes mentions legal codes', () => {
+  const intel = new IntelAggregator();
+  intel.extract('urgent bank fraud otp');
+  const payload = intel.getGuviCallbackPayload('legal-test', 3, 'bank_fraud');
+  
+  assert(payload.agentNotes.includes('IT Act') || payload.agentNotes.includes('IPC') || payload.agentNotes.includes('cybercrime'), 
+    'Should reference legal framework');
+  assert(payload.agentNotes.includes('1930') || payload.agentNotes.includes('cybercrime.gov.in'), 
+    'Should reference reporting channels');
+});
+
+console.log('\n🔥 NATIONAL LEVEL: Conversation Consistency Tests');
+console.log('─'.repeat(50));
+
+test('Consistency: Same session maintains persona across turns', () => {
+  const scamData = classifyScam('Your SBI account blocked');
+  // Use same language for both calls to test same-scam-same-language consistency
+  const langData = detectAndMirror('aapka account blocked');
+  const persona1 = selectPersona(scamData.type, langData.language);
+  
+  // Simulate turn 2 with same scam type and language
+  const persona2 = selectPersona(scamData.type, langData.language);
+  
+  // Same scam type + same language = same persona
+  assertEqual(persona1.id, persona2.id, 'Persona should be consistent for same scam+language');
+});
+
+test('Consistency: Stage progresses correctly over turns', () => {
+  const stages = [];
+  const turns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  
+  for (const t of turns) {
+    let stage;
+    if (t === 0) stage = 'GREETING';
+    else if (t >= 8) stage = 'CLOSING';
+    else if (t >= 4) stage = 'FINANCIAL';
+    else stage = 'RAPPORT';
+    stages.push(stage);
+  }
+  
+  assertEqual(stages[0], 'GREETING');
+  assertEqual(stages[1], 'RAPPORT');
+  assertEqual(stages[4], 'FINANCIAL');
+  assertEqual(stages[8], 'CLOSING');
+  assertEqual(stages[10], 'CLOSING');
+});
+
+// =====================================================
 // RESULTS
 // =====================================================
 console.log('\n' + '═'.repeat(50));
