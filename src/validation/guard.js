@@ -124,21 +124,23 @@ function validateAndCleanReply(reply, persona, langData) {
     cleaned = cleaned.replace(namePrefix, '');
   }
 
-  // Enforce 2-sentence max — cut at 2nd sentence ending
+  // Enforce 3-sentence max (increased from 2 for more natural conversation)
   const sentences = cleaned.match(/[^.!?।]+[.!?।]+/g) || [cleaned];
-  if (sentences.length > 2) {
-    cleaned = sentences.slice(0, 2).join(' ').trim();
+  if (sentences.length > 3) {
+    cleaned = sentences.slice(0, 3).join(' ').trim();
   }
 
-  // Hard length cap (200 chars for human-like brevity)
-  if (cleaned.length > 200) {
-    cleaned = cleaned.slice(0, 180).trim();
+  // Hard length cap (300 chars for more natural responses)
+  if (cleaned.length > 300) {
+    cleaned = cleaned.slice(0, 280).trim();
     if (!cleaned.endsWith('?') && !cleaned.endsWith('...')) cleaned += '...';
   }
 
   // Ensure response ends open (question or ellipsis — not a full stop)
+  // But don't force it if the response already sounds natural
   const trimmed = cleaned.trim();
-  if (/\.$/.test(trimmed)) {
+  if (/\.$/.test(trimmed) && trimmed.length > 50) {
+    // Only add ellipsis if it's a statement that needs continuation
     cleaned = trimmed.slice(0, -1) + '...';
   }
   if (!/[?।!…]$/.test(cleaned.trim()) && !cleaned.trim().endsWith('...')) {
