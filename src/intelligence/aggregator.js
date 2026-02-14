@@ -111,8 +111,9 @@ class IntelAggregator {
 
   /**
    * Get the GUVI callback format — exactly what the automated system scores.
+   * FIX 4: Now includes turnHistory for narrative agentNotes
    */
-  getGuviCallbackPayload(sessionId, turnCount, scamType) {
+  getGuviCallbackPayload(sessionId, turnCount, scamType, turnHistory = []) {
     return {
       sessionId,
       scamDetected: true,
@@ -124,14 +125,15 @@ class IntelAggregator {
         phoneNumbers:      [...this.intel.phoneNumbers],
         suspiciousKeywords: [...this.intel.suspiciousKeywords].slice(0, 15),
       },
-      agentNotes: this.generateAgentNotes(scamType, turnCount),
+      agentNotes: this.generateAgentNotes(scamType, turnCount, turnHistory),
     };
   }
 
   /**
    * Generate police-report-style agent notes for GUVI callback.
+   * FIX 4: Enhanced with turn-by-turn narrative from turnHistory
    */
-  generateAgentNotes(scamType, turns) {
+  generateAgentNotes(scamType, turns, turnHistory = []) {
     const stats = this.getStats();
     const type = (scamType || 'unknown').replace(/_/g, ' ');
     const items = stats.totalItems;
@@ -142,6 +144,18 @@ class IntelAggregator {
     notes += `Impersonated organization(s): ${orgs}. `;
     if (names) notes += `Scammer claimed identity: ${names}. `;
     notes += `Engaged for ${turns} turns. `;
+    
+    // FIX 4: Add turn-by-turn narrative for multi-turn evaluation
+    if (turnHistory && turnHistory.length > 0) {
+      const intelTurns = turnHistory.filter(t => t.intelFoundThisTurn && t.intelFoundThisTurn.length > 0);
+      if (intelTurns.length > 0) {
+        const narrative = intelTurns
+          .map(t => `Turn ${t.turn}: ${t.intelFoundThisTurn.join(', ')} extracted (${t.stage})`)
+          .join('. ');
+        notes += narrative + '. ';
+      }
+    }
+    
     notes += `Extracted ${items} intelligence items. `;
     if (stats.hasPhishing) notes += 'Phishing URLs captured and logged. ';
     if (stats.hasUpi) notes += 'UPI fraud target confirmed — IDs extracted. ';

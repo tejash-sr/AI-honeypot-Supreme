@@ -1,11 +1,11 @@
 /**
- * KAVACH — GUVI Callback Reporter (SUPREMACY LAYER 6)
+ * KAVACH — GUVI Callback Reporter (NATIONAL SPOTLIGHT LAYER 6)
  * Fires to GUVI automated evaluation endpoint with accumulated intel.
  *
  * Rules:
  * 1. Only fires when intel is meaningful (min 2 items OR turn >= 5)
  * 2. Fires again at session end with FULL accumulated intel
- * 3. agentNotes reads like a police report, not a debug log
+ * 3. agentNotes reads like a police report with turn-by-turn narrative (FIX 4)
  * 4. NEVER blocks the main response — non-blocking fire-and-forget
  */
 
@@ -19,9 +19,10 @@ const GUVI_CALLBACK_URL = 'https://hackathon.guvi.in/api/updateHoneyPotFinalResu
  * @param {IntelAggregator} intelAggregator - Accumulated intelligence
  * @param {number} turnCount - Current turn number
  * @param {string} scamType - Classified scam type
+ * @param {Array} turnHistory - FIX 4: Detailed turn history for narrative agentNotes
  */
-async function fireGuviCallback(sessionId, intelAggregator, turnCount, scamType) {
-  const payload = intelAggregator.getGuviCallbackPayload(sessionId, turnCount, scamType);
+async function fireGuviCallback(sessionId, intelAggregator, turnCount, scamType, turnHistory = []) {
+  const payload = intelAggregator.getGuviCallbackPayload(sessionId, turnCount, scamType, turnHistory);
 
   // Only fire if we have something meaningful
   const hasIntel = payload.extractedIntelligence.upiIds.length > 0

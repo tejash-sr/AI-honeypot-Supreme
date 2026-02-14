@@ -1,10 +1,12 @@
 /**
- * KAVACH — Response Guard (SUPREMACY GRADE)
- * Zero-tolerance AI tell stripping. If ANY AI pattern is found,
- * the ENTIRE reply is replaced with a persona-appropriate fallback.
+ * KAVACH — Response Guard (NATIONAL SPOTLIGHT GRADE)
+ * Zero-tolerance AI tell stripping + Natural filler injection.
+ * If ANY AI pattern is found, the ENTIRE reply is replaced with a persona-appropriate fallback.
  *
  * This is what prevents automated evaluators from detecting us.
  * Every competitor fails this — their LLM responses say "Certainly!"
+ * 
+ * FIX 3: Enhanced with filler injection and stricter pattern matching
  */
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -32,6 +34,10 @@ const AI_KILLS = [
   /it('s| is) important to/i,
   /I('d| would) recommend/i,
   /this is a (serious|concerning)/i,
+  // FIX 3: Additional AI tells from audit
+  /^(hello|hi there|greetings)/i,
+  /sounds? like/i,
+  /that sounds?/i,
 ];
 
 // Over-formal language that sounds robotic
@@ -55,6 +61,22 @@ const PERSONA_BREAKS = [
   /\b(extracting|intelligence|evidence|law enforcement)\b/i,
   /\b(reporting you|cyber crime|police complaint)\b/i,
 ];
+
+// FIX 3: Natural filler words by language (makes responses sound more human)
+const FILLER_INJECTOR = {
+  hinglish:         ['Arrey, ', 'Haan, ', 'Ruko, ', 'Accha, ', 'Ek second, ', 'Yaar, '],
+  hindi_devanagari: ['अरे, ', 'हाँ, ', 'रुकिए, ', 'अच्छा, ', 'एक पल, ', 'जी, '],
+  tamil:            ['ஐயோ, ', 'சரி, ', 'ஒரு நிமிஷம், ', 'என்னா, ', 'பார், '],
+  telugu:           ['అయ్యో, ', 'సరే, ', 'ఒక్క నిమిషం, ', 'ఏమిటి, ', 'చూడండి, '],
+  bengali:          ['আরে, ', 'হ্যাঁ, ', 'একটু, ', 'বলুন, ', 'দেখুন, '],
+  gujarati:         ['અરે, ', 'ઠીક, ', 'ભાઈ, ', 'જુઓ, ', 'એક મિનિટ, '],
+  kannada:          ['ಅಯ್ಯೋ, ', 'ಸರಿ, ', 'ಒಂದು ನಿಮಿಷ, ', 'ನೋಡಿ, '],
+  english:          ['Oh, ', 'Wait, ', 'Actually, ', 'Hmm, ', 'Sorry, ', 'Hold on, '],
+  marathi:          ['अरे, ', 'हो, ', 'एक मिनिट, ', 'बघा, '],
+  punjabi:          ['ਓਹੋ, ', 'ਹਾਂ, ', 'ਇੱਕ ਮਿੰਟ, ', 'ਦੇਖੋ, '],
+  malayalam:        ['അയ്യോ, ', 'ശരി, ', 'ഒരു മിനിറ്റ്, ', 'നോക്കൂ, '],
+  odia:             ['ଅରେ, ', 'ହଁ, ', 'ଏକ ମିନିଟ୍, ', 'ଦେଖ, '],
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LANGUAGE FALLBACKS — persona-appropriate, always in correct script
@@ -130,21 +152,33 @@ function validateAndCleanReply(reply, persona, langData) {
     cleaned = sentences.slice(0, 2).join(' ').trim();
   }
 
-  // Hard length cap (250 chars for natural responses)
-  if (cleaned.length > 250) {
-    cleaned = cleaned.slice(0, 240).trim();
+  // Hard length cap (220 chars for natural responses)
+  if (cleaned.length > 220) {
+    cleaned = cleaned.slice(0, 200).trim();
     if (!cleaned.endsWith('?') && !cleaned.endsWith('...')) cleaned += '...';
   }
 
   // Ensure response ends open (question or ellipsis — not a full stop)
-  // But don't force it if the response already sounds natural
   const trimmed = cleaned.trim();
-  if (/\.$/.test(trimmed) && trimmed.length > 50) {
-    // Only add ellipsis if it's a statement that needs continuation
+  if (/\.$/.test(trimmed) && !trimmed.endsWith('...')) {
     cleaned = trimmed.slice(0, -1) + '...';
   }
   if (!/[?।!…]$/.test(cleaned.trim()) && !cleaned.trim().endsWith('...')) {
     cleaned = cleaned.trim() + '...';
+  }
+
+  // FIX 3: Inject natural filler if missing (makes elderly persona sound authentic)
+  const lang = langData?.language || 'english';
+  const fillers = FILLER_INJECTOR[lang] || FILLER_INJECTOR.english;
+  const hasNaturalFiller = fillers.some(f => 
+    cleaned.toLowerCase().startsWith(f.toLowerCase().trim())
+  );
+  
+  // 60% chance to add filler if missing (not every response needs it)
+  if (!hasNaturalFiller && Math.random() < 0.6) {
+    const filler = fillers[Math.floor(Math.random() * fillers.length)];
+    // Lowercase first character of original text when prepending filler
+    cleaned = filler + cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
   }
 
   return cleaned.trim();

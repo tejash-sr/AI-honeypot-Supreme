@@ -20,6 +20,9 @@
  * Bharat Mandapam, New Delhi — February 16, 2026
  */
 
+// FIX 1: Track server start time for dynamic uptime
+const SERVER_START = Date.now();
+
 // ── Core Supremacy Modules ──────────────────────────────────────────────────
 const { detectAndMirror } = require('../src/language/mirror-engine');
 const { classifyScam } = require('../src/detection/classifier');
@@ -67,9 +70,17 @@ module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     return res.status(200).json({
       status: 'KAVACH online',
-      message: 'Endpoint active. POST scam messages to engage.',
-      version: '2.0.0-supremacy',
-      uptime: process.uptime(),
+      version: '3.0.0-national-spotlight',
+      message: 'POST scam messages to engage.',
+      uptime: ((Date.now() - SERVER_START) / 1000).toFixed(1) + 's',
+      timestamp: new Date().toISOString(),
+      capabilities: {
+        languages: 13,
+        personas: 6,
+        scamTypes: 9,
+        llmProviders: 3,
+        responseGuarantee: '6-tier failsafe cascade'
+      }
     });
   }
 
@@ -118,7 +129,8 @@ module.exports = async function handler(req, res) {
         emotionHist:   [],
         lastLanguage:  languageData.language,
         caseId:        `KAVACH-2026-${sessionId.slice(-6).toUpperCase()}`,
-        replyHistory:  [],  // NEW: Track previous replies for anti-repetition
+        replyHistory:  [],  // Track previous replies for anti-repetition
+        turnHistory:   [],  // FIX 4: Track detailed turn history for agentNotes
       });
     }
     const session = SESSIONS.get(sessionId);
@@ -239,6 +251,23 @@ module.exports = async function handler(req, res) {
       session.replyHistory = session.replyHistory.slice(-10);
     }
 
+    // FIX 4: Track detailed turn history for multi-turn memory
+    if (!session.turnHistory) session.turnHistory = [];
+    session.turnHistory.push({
+      turn: session.turnCount,
+      scammerMessage: message.text.slice(0, 100),
+      kavachReply: reply.slice(0, 100),
+      intelFoundThisTurn: Object.keys(newIntel || {}).filter(k => newIntel[k]?.length > 0),
+      emotion,
+      stage: session.stage,
+      provider: response.provider || 'unknown',
+      timestamp: Date.now()
+    });
+    // Keep last 15 turns
+    if (session.turnHistory.length > 15) {
+      session.turnHistory = session.turnHistory.slice(-15);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // SHIELD EVIDENCE REPORT
     // ═══════════════════════════════════════════════════════════════════════
@@ -254,7 +283,7 @@ module.exports = async function handler(req, res) {
     // ═══════════════════════════════════════════════════════════════════════
     // LAYER 6: GUVI CALLBACK (non-blocking fire-and-forget)
     // ═══════════════════════════════════════════════════════════════════════
-    fireGuviCallback(sessionId, session.intel, session.turnCount, session.scamType)
+    fireGuviCallback(sessionId, session.intel, session.turnCount, session.scamType, session.turnHistory)
       .catch(() => {}); // NEVER block main response
 
     // ═══════════════════════════════════════════════════════════════════════
