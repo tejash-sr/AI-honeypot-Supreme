@@ -19,7 +19,31 @@ const SCRIPT_RANGES = [
 
 // Vocabulary markers for Latin-script Indian languages
 const VOCAB_MARKERS = {
-  hinglish: ['aapka', 'mera', 'karo', 'abhi', 'yahan', 'wahan', 'bolna', 'batao', 'kyc', 'otp', 'bol', 'kar', 'hai', 'hoga', 'nahi', 'chahiye', 'suno', 'bhai', 'accha', 'theek', 'arrey', 'jaldi'],
+  hinglish: [
+    // Core Hindi words in Latin script (NOT English words)
+    'aapka', 'aapke', 'aapki', 'mera', 'meri', 'mere', 'karo', 'karna', 'karein', 'karega',
+    'abhi', 'yahan', 'wahan', 'bolna', 'batao', 'bata', 'bataiye', 'bol',
+    'kar', 'hai', 'hoga', 'hogi', 'nahi', 'nahin', 'chahiye', 'suno', 'suniye', 'bhai',
+    'accha', 'achha', 'theek', 'arrey', 'arre', 'jaldi', 'turant', 'foran',
+    // Common Hindi verbs (NOT shared with English)
+    'ho', 'jayega', 'jayegi', 'padega', 'padegi', 'dedo', 'dena', 'dijiye',
+    'bhejo', 'bhejiye', 'batana', 'paise', 'paisa', 'rupaye', 'rupya',
+    'khata', 'band', 'bhejdo',
+    // Pronouns/particles unique to Hindi
+    'kya', 'kaise', 'mein', 'hum', 'yeh', 'woh', 'toh', 'lekin', 'aur', 'bhi',
+    'sirf', 'bas', 'mat', 'ruk', 'ruko', 'chal', 'chalo',
+    // Address terms unique to Hindi
+    'sahab', 'sahib', 'beta', 'beti', 'didi', 'ji', 'babu', 'amma',
+    // Time words unique to Hindi
+    'kal', 'aaj', 'subah', 'shaam', 'raat', 'din',
+    // Other Hindi-only words
+    'haan', 'lakh', 'crore', 'sahi', 'galat', 'samjho', 'samajh',
+    'dekhiye', 'dekho', 'kyun', 'kab', 'kahan', 'kaun', 'kitna', 'kitne',
+    'dikkat', 'pareshani', 'aadhar', 'aadhaar', 'paytm', 'phonepe',
+    'wala', 'wali', 'kuch', 'sab',
+    'pehle', 'baad', 'zyada', 'kam', 'bilkul', 'zaroor', 'zaruri',
+    'pata', 'maloom', 'jaankari', 'chashma', 'ghar', 'bolo',
+  ],
   marathi:  ['ahe', 'aahe', 'mazha', 'tumcha', 'bghya', 'karaa', 'naka', 'atta', 'aplya'],
   bengali_roman: ['amar', 'apnar', 'korbo', 'hobe', 'dada', 'didi', 'bhai'],
 };

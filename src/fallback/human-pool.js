@@ -120,6 +120,62 @@ const POOL = [
     text:"Which account do you need — my Canara Bank one or the SBI Jan Dhan? I have both you see..." },
 
   // ══════════════════════════════════════════════════════════════════
+  // OTP FRAUD — GREETING (scammer claims OTP needed/account issue)
+  // ══════════════════════════════════════════════════════════════════
+  { id:'otp-gr-hi-1', tags:['otp_fraud','GREETING','hinglish','LOW'],
+    text:"Arrey account band ho jayega? Abhi toh sab theek tha... kaun bol raha hai, pehle batao kaun ho?" },
+  { id:'otp-gr-hi-2', tags:['otp_fraud','GREETING','hinglish','LOW'],
+    text:"OTP chahiye aapko? Lekin pehle batao kaun si bank se call kar rahe ho, yeh number alag lag raha hai." },
+  { id:'otp-gr-hi-3', tags:['otp_fraud','GREETING','hinglish','LOW'],
+    text:"SBI se bol rahe ho? Ruko main check karti hoon, kal hi toh ATM se paise nikale the... kya hua?" },
+  { id:'otp-gr-hi-4', tags:['otp_fraud','GREETING','hinglish','LOW'],
+    text:"Account verify karna hai? Accha, lekin mera beta bolta hai phone pe kuch share nahi karna... pehle confirm karo." },
+  { id:'otp-gr-hi-5', tags:['otp_fraud','GREETING','hinglish','LOW'],
+    text:"Haan bhai sun raha hoon — lekin yeh OTP kya hota hai exactly? Mujhe itna tech samajh nahi aata." },
+  { id:'otp-gr-dv-1', tags:['otp_fraud','GREETING','hindi_devanagari','LOW'],
+    text:"अकाउंट बंद हो जाएगा? अभी तो सब ठीक था... पहले बताइए कौन बोल रहा है?" },
+  { id:'otp-gr-dv-2', tags:['otp_fraud','GREETING','hindi_devanagari','LOW'],
+    text:"OTP चाहिए? लेकिन कौन सी बैंक से call कर रहे हो, यह नंबर अलग लग रहा है।" },
+  { id:'otp-gr-dv-3', tags:['otp_fraud','GREETING','hindi_devanagari','LOW'],
+    text:"SBI से बोल रहे हो? रुकिए check करती हूँ, कल ही तो पैसे निकाले थे..." },
+  { id:'otp-gr-ta-1', tags:['otp_fraud','GREETING','tamil','LOW'],
+    text:"Account block ஆகிடுமா? நேத்து தான் ATM-ல பணம் எடுத்தேன்... என்னாச்சு?" },
+  { id:'otp-gr-ta-2', tags:['otp_fraud','GREETING','tamil','LOW'],
+    text:"OTP கேக்குறீங்களா? எந்த bank-ல இருந்து call பண்றீங்க, முதல்ல சொல்லுங்க." },
+  { id:'otp-gr-te-1', tags:['otp_fraud','GREETING','telugu','LOW'],
+    text:"Account block అవుతుందా? నిన్న ATM నుండి డబ్బు తీసాను... ఏం జరిగింది?" },
+  { id:'otp-gr-te-2', tags:['otp_fraud','GREETING','telugu','LOW'],
+    text:"OTP కావాలా? ఏ bank నుండి call చేస్తున్నారు, ముందు చెప్పండి." },
+  { id:'otp-gr-be-1', tags:['otp_fraud','GREETING','bengali','LOW'],
+    text:"Account block হয়ে যাবে? গতকাল তো ATM থেকে টাকা তুলেছি... কী হলো?" },
+  { id:'otp-gr-en-1', tags:['otp_fraud','GREETING','english','LOW'],
+    text:"My account will get blocked? But I just used it yesterday... who is this calling, which bank office?" },
+  { id:'otp-gr-en-2', tags:['otp_fraud','GREETING','english','LOW'],
+    text:"You need my OTP? Hold on, first tell me which bank are you from and what is your employee ID?" },
+  { id:'otp-gr-en-3', tags:['otp_fraud','GREETING','english','LOW'],
+    text:"Account problem? But I received my pension in this account only last week, what happened suddenly?" },
+  
+  // OTP FRAUD — RAPPORT (scammer building trust)
+  { id:'otp-rp-hi-1', tags:['otp_fraud','RAPPORT','hinglish','MEDIUM'],
+    text:"Accha toh verify karna padega? Lekin mera beta bolta hai phone pe kabhi OTP nahi dena... kya karun?" },
+  { id:'otp-rp-hi-2', tags:['otp_fraud','RAPPORT','hinglish','MEDIUM'],
+    text:"Employee ID diya aapne? Main note kar leta hoon... aur ek baat, branch ka address bhi do please." },
+  { id:'otp-rp-hi-3', tags:['otp_fraud','RAPPORT','hinglish','MEDIUM'],
+    text:"Verification samajh aaya, lekin main ek kaam karun — apne bank manager ko call karke confirm karun?" },
+  { id:'otp-rp-dv-1', tags:['otp_fraud','RAPPORT','hindi_devanagari','MEDIUM'],
+    text:"अच्छा verify करना पड़ेगा? लेकिन मेरा बेटा कहता है OTP कभी नहीं देना..." },
+  { id:'otp-rp-dv-2', tags:['otp_fraud','RAPPORT','hindi_devanagari','MEDIUM'],
+    text:"Branch का address बताइए, मैं कल personally जाकर कर लूँगी verification." },
+  { id:'otp-rp-ta-1', tags:['otp_fraud','RAPPORT','tamil','MEDIUM'],
+    text:"Verify பண்ணணுமா? ஆனா என் பையன் சொல்றான் OTP யாருக்கும் கொடுக்காதேன்னு..." },
+  { id:'otp-rp-te-1', tags:['otp_fraud','RAPPORT','telugu','MEDIUM'],
+    text:"Verify చేయాలా? కానీ నా కొడుకు చెప్తాడు OTP ఎవరికీ ఇవ్వకూడదని..." },
+  { id:'otp-rp-en-1', tags:['otp_fraud','RAPPORT','english','MEDIUM'],
+    text:"Verification is needed? But my son always says never share OTP on phone... should I call him first?" },
+  { id:'otp-rp-en-2', tags:['otp_fraud','RAPPORT','english','MEDIUM'],
+    text:"Can you tell me the branch address? I can visit personally tomorrow morning for the verification." },
+
+  // ══════════════════════════════════════════════════════════════════
   // OTP FRAUD — EXTRACTION
   // ══════════════════════════════════════════════════════════════════
   { id:'otp-ex-hi-1', tags:['otp_fraud','EXTRACTION','hinglish','MEDIUM'],
@@ -319,21 +375,30 @@ function getSmartFallback(scamType, stage, language, emotion, usedIds) {
     return true;
   });
 
+  // CRITICAL FIX: First, filter to ONLY language-matched candidates
+  // Language mirroring is NON-NEGOTIABLE
+  const langCandidates = candidates.filter(f => f.tags.includes(language));
+  
+  // Use language-filtered pool if we have any matches, otherwise fall back to all
+  const pool = langCandidates.length > 0 ? langCandidates : candidates;
+
   // Score each candidate
-  const scored = candidates.map(f => {
+  const scored = pool.map(f => {
     let score = 0;
     const tags = f.tags;
     
     // Exact scam type match (+10)
     if (tags.includes(scamType)) score += 10;
     // Stage match (+5)
-    if (tags.includes(stage) || tags.includes('any')) score += 5;
-    // Language match (+15 - highest priority for mirroring)
-    if (tags.includes(language)) score += 15;
+    if (tags.includes(stage)) score += 5;
+    // Generic stage is ok but lower (+2)
+    if (tags.includes('any') && !tags.includes(stage)) score += 2;
+    // Language match (+20 - HIGHEST priority for mirroring — NON-NEGOTIABLE)
+    if (tags.includes(language)) score += 20;
     // Emotion match when HIGH (+8)
     if (emotion === 'HIGH' && tags.includes('HIGH')) score += 8;
-    // Generic fallback bonus (+2)
-    if (tags.includes('generic')) score += 2;
+    // Generic fallback bonus (+1)
+    if (tags.includes('generic')) score += 1;
     
     return { ...f, score };
   });
@@ -341,9 +406,9 @@ function getSmartFallback(scamType, stage, language, emotion, usedIds) {
   // Sort by score descending
   scored.sort((a, b) => b.score - a.score);
 
-  // Get top candidates with same score
+  // Get top candidates (within 3 points of best score for variety)
   const topScore = scored[0]?.score || 0;
-  const topCandidates = scored.filter(s => s.score === topScore);
+  const topCandidates = scored.filter(s => s.score >= topScore - 3);
 
   // Random selection from top candidates
   const selected = topCandidates[Math.floor(Math.random() * topCandidates.length)];
@@ -352,12 +417,23 @@ function getSmartFallback(scamType, stage, language, emotion, usedIds) {
     return { id: selected.id, text: selected.text };
   }
 
-  // Ultimate fallback
+  // Ultimate fallback — MUST match language
+  const langFallbacks = {
+    hinglish: "Ruko ruko, samajh nahi aaya... phir se batao please?",
+    hindi_devanagari: "रुकिए, समझ नहीं आया... फिर से बताएंगे?",
+    tamil: "ஒரு நிமிஷம், புரியல... மீண்டும் சொல்லுங்க?",
+    telugu: "ఒక్క నిమిషం, అర్థం కాలేదు... మళ్ళీ చెప్పండి?",
+    bengali: "একটু দাঁড়ান, বুঝলাম না... আবার বলুন?",
+    gujarati: "એક ક્ષણ, સમજાયું નહીં... ફરીથી કહો?",
+    kannada: "ಒಂದು ನಿಮಿಷ, ಅರ್ಥವಾಗಲಿಲ್ಲ... ಮತ್ತೆ ಹೇಳಿ?",
+    malayalam: "ഒരു നിമിഷം, മനസ്സിലായില്ല... വീണ്ടും പറയൂ?",
+    marathi: "अरे, समजलं नाही... परत सांगाल का?",
+    english: "Wait, I didn't quite understand... can you explain again please?"
+  };
+  
   return {
     id: 'ultimate-fallback',
-    text: language === 'english'
-      ? "Wait, I didn't quite understand... can you explain again please?"
-      : "Ruko, samajh nahi aaya... phir se batao please?"
+    text: langFallbacks[language] || langFallbacks.hinglish
   };
 }
 

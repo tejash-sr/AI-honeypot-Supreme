@@ -12,6 +12,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { getSmartFallback } = require('../fallback/human-pool');
 
+// ══════════════════════════════════════════════════════════════════
+// ENV VAR LOADING — Support both process.env and dotenv
+// ══════════════════════════════════════════════════════════════════
+try { require('dotenv').config(); } catch (e) { /* dotenv optional */ }
+
 // Initialize LLM clients
 const genAI = process.env.GEMINI_API_KEY 
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) 
@@ -41,6 +46,15 @@ const CLAUDE_CONFIG = {
   model: 'claude-3-haiku-20240307',
   baseUrl: 'https://api.anthropic.com/v1/messages',
 };
+
+// ══════════════════════════════════════════════════════════════════
+// STARTUP DIAGNOSTICS — Log which providers are configured
+// ══════════════════════════════════════════════════════════════════
+console.log('[KAVACH] ═══ LLM Provider Status ═══');
+console.log(`[KAVACH] GROQ:    ${GROQ_CONFIG.apiKey ? '✅ KEY SET (' + GROQ_CONFIG.apiKey.substring(0, 8) + '...)' : '❌ NO KEY — set GROQ_API_KEY env var!'}`);
+console.log(`[KAVACH] GEMINI:  ${genAI ? '✅ INITIALIZED' : '❌ NO KEY — set GEMINI_API_KEY env var!'}`);
+console.log(`[KAVACH] CLAUDE:  ${CLAUDE_CONFIG.apiKey ? '✅ KEY SET' : '⚠️ NO KEY (optional paid fallback)'}`);
+console.log('[KAVACH] ═══════════════════════════');
 
 let currentGeminiIndex = 0;
 let lastGeminiRateLimit = 0;
@@ -161,7 +175,7 @@ async function callGemini(systemPrompt, messages, timeout = 6000) {
         },
       });
       
-      const fullPrompt = systemPrompt + '\n\nScammer says: "' + lastUserMsg + '"\n\nRespond as your persona (1-2 sentences, conversational, DO NOT repeat):';
+      const fullPrompt = systemPrompt + '\n\nScammer says: "' + lastUserMsg + '"\n\nRespond as your persona in THE SAME LANGUAGE as the scammer (1-2 sentences, conversational, DO NOT repeat, DO NOT switch to English if scammer wrote in Hindi/Tamil/Telugu):';
       
       const resultPromise = chat.sendMessage(fullPrompt);
       const timeoutPromise = new Promise((_, reject) => 
@@ -881,10 +895,33 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
   }
   const usedIds = usedResponses.get(sessionId);
 
+  // ═══════════════════════════════════════════════════════════════
+  // LANGUAGE REINFORCEMENT — Prepend hard language constraint
+  // The identity lock prompt has it, but LLMs sometimes ignore it.
+  // This adds it as the LAST thing the LLM reads before generating.
+  // ═══════════════════════════════════════════════════════════════
+  const LANG_ENFORCEMENT = {
+    hinglish: '\n\n[MANDATORY] Reply in HINGLISH only (Hindi words in Latin script mixed with English). Example: "Arrey, mera account... kya hua?"',
+    hindi_devanagari: '\n\n[MANDATORY] Reply in HINDI DEVANAGARI script ONLY. हिंदी में जवाब दो।',
+    tamil: '\n\n[MANDATORY] Reply in TAMIL script ONLY. தமிழில் பதில் சொல்லுங்கள்.',
+    telugu: '\n\n[MANDATORY] Reply in TELUGU script ONLY. తెలుగులో సమాధానం చెప్పండి.',
+    bengali: '\n\n[MANDATORY] Reply in BENGALI script ONLY. বাংলায় উত্তর দিন.',
+    gujarati: '\n\n[MANDATORY] Reply in GUJARATI script ONLY. ગુજરાતીમાં જવાબ આપો.',
+    kannada: '\n\n[MANDATORY] Reply in KANNADA script ONLY. ಕನ್ನಡದಲ್ಲಿ ಉತ್ತರಿಸಿ.',
+    malayalam: '\n\n[MANDATORY] Reply in MALAYALAM script ONLY. മലയാളത്തിൽ മറുപടി നൽകുക.',
+    marathi: '\n\n[MANDATORY] Reply in MARATHI Devanagari ONLY. मराठी मध्ये उत्तर द्या.',
+    punjabi: '\n\n[MANDATORY] Reply in PUNJABI Gurmukhi ONLY. ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ.',
+    english: '',
+  };
+  
+  const langEnforcement = LANG_ENFORCEMENT[lang] || '';
+  const enhancedPrompt = systemPrompt + langEnforcement;
+
   // ════════════════════════════════════════════════════════════
   // TIER 1: GROQ (Primary — 200ms latency)
   // ════════════════════════════════════════════════════════════
-  const groqResult = await callGroq(systemPrompt, messages);
+  const groqResult = await callGroq(enhancedPrompt, messages);
+  console.log(`[KAVACH] TIER 1 GROQ: ok=${groqResult.ok} skipped=${groqResult.skipped || false} error=${groqResult.error || 'none'} rateLimited=${groqResult.rateLimited || false}`);
   if (groqResult.ok && groqResult.text && groqResult.text.length >= 10) {
     if (!isResponseTooSimilar(groqResult.text, sessionId)) {
       trackUsedResponse(groqResult.text, sessionId);
@@ -895,12 +932,14 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
         ms: Date.now() - startMs 
       };
     }
+    console.log('[KAVACH] GROQ response rejected: too similar to previous');
   }
 
   // ════════════════════════════════════════════════════════════
   // TIER 2: GEMINI (Secondary — 3-model cascade)
   // ════════════════════════════════════════════════════════════
-  const geminiResult = await callGemini(systemPrompt, messages);
+  const geminiResult = await callGemini(enhancedPrompt, messages);
+  console.log(`[KAVACH] TIER 2 GEMINI: ok=${geminiResult.ok} skipped=${geminiResult.skipped || false} error=${geminiResult.error || 'none'}`);
   if (geminiResult.ok && geminiResult.text && geminiResult.text.length >= 10) {
     if (!isResponseTooSimilar(geminiResult.text, sessionId)) {
       trackUsedResponse(geminiResult.text, sessionId);
@@ -912,12 +951,14 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
         ms: Date.now() - startMs 
       };
     }
+    console.log('[KAVACH] GEMINI response rejected: too similar to previous');
   }
 
   // ════════════════════════════════════════════════════════════
   // TIER 3: CLAUDE (Tertiary — paid, ultra-reliable)
   // ════════════════════════════════════════════════════════════
-  const claudeResult = await callClaude(systemPrompt, messages);
+  const claudeResult = await callClaude(enhancedPrompt, messages);
+  console.log(`[KAVACH] TIER 3 CLAUDE: ok=${claudeResult.ok} skipped=${claudeResult.skipped || false} error=${claudeResult.error || 'none'}`);
   if (claudeResult.ok && claudeResult.text && claudeResult.text.length >= 10) {
     if (!isResponseTooSimilar(claudeResult.text, sessionId)) {
       trackUsedResponse(claudeResult.text, sessionId);
@@ -928,11 +969,13 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
         ms: Date.now() - startMs 
       };
     }
+    console.log('[KAVACH] CLAUDE response rejected: too similar to previous');
   }
 
   // ════════════════════════════════════════════════════════════
   // TIER 4: HUMAN POOL (120+ contextual responses — NEVER fails)
   // ════════════════════════════════════════════════════════════
+  console.log(`[KAVACH] TIER 4 HUMAN POOL: lang=${lang} scamType=${scamType} stage=${stage} emotion=${emotion}`);
   const humanFallback = getSmartFallback(scamType, stage, lang, emotion, usedIds);
   if (humanFallback && humanFallback.id) {
     usedIds.add(humanFallback.id);

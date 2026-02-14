@@ -33,6 +33,7 @@ const { StallingArsenal } = require('../src/agent/engagement-arc');
 const { IntelAggregator } = require('../src/intelligence/aggregator');
 const { validateAndCleanReply } = require('../src/validation/guard');
 const { fireGuviCallback } = require('../src/callback/guvi-reporter');
+const { getSmartFallback } = require('../src/fallback/human-pool');
 
 // ── Legacy Modules (backwards compat for existing tests) ────────────────────
 const { appendToShieldReport } = require('../src/evidence/shield');
@@ -231,7 +232,27 @@ module.exports = async function handler(req, res) {
     // ═══════════════════════════════════════════════════════════════════════
     // RESPONSE GUARD — strip AI tells, enforce length, ensure open-ended
     // ═══════════════════════════════════════════════════════════════════════
-    const reply = validateAndCleanReply(response.reply, session.persona, languageData);
+    let reply = validateAndCleanReply(response.reply, session.persona, languageData);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LANGUAGE ENFORCEMENT — If LLM responded in wrong language, fix it
+    // ═══════════════════════════════════════════════════════════════════════
+    const replyLang = detectAndMirror(reply);
+    const expectedLang = languageData.language;
+    
+    // If scammer wrote in Hindi/Hinglish/Tamil etc but reply is English → replace with language-matched fallback
+    if (expectedLang !== 'english' && replyLang.language === 'english' && response.tier <= 3) {
+      console.log(`[KAVACH] ⚠️ Language mismatch: expected=${expectedLang} got=${replyLang.language}. Replacing with fallback.`);
+      const langFallback = getSmartFallback(
+        session.scamType, session.stage, expectedLang, emotion, 
+        new Set(session.replyHistory || [])
+      );
+      if (langFallback && langFallback.text) {
+        reply = langFallback.text;
+        response.provider = 'human-pool-lang-fix';
+        response.tier = 4;
+      }
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // EXTRACT INTEL FROM OUR OWN REPLY (captures scammer reactions)
