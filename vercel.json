@@ -18,16 +18,6 @@
       "memory": 256
     }
   },
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    }
-  ],
   "routes": [
     { "src": "/api/honeypot", "dest": "/api/honeypot.js" },
     { "src": "/api/health",   "dest": "/api/health.js" },
