@@ -106,6 +106,7 @@ module.exports = async function handler(req, res) {
     if (!SESSIONS.has(sessionId)) {
       const persona = selectPersona(scamData.type, languageData.language);
       SESSIONS.set(sessionId, {
+        sessionId,     // CRITICAL: Store sessionId for fallback rotation tracking
         createdAt:     Date.now(),
         turnCount:     0,
         scamType:      scamData.type,

@@ -36,7 +36,7 @@ const PERSONA_FILLERS = {
   punjabi:          { fillers: ['ਅਰੇ', 'ਠੀਕ ਹੈ', 'ਜੀ', 'ਸੁਣੋ'], errorStyle: 'ji honorific, verb at end' },
   malayalam:        { fillers: ['അയ്യോ', 'ശരി', 'ഏതാ', 'അമ്മേ'], errorStyle: 'SOV structure, -o suffix questions' },
   odia:             { fillers: ['ଅରେ', 'ହଁ', 'କହନ୍ତୁ'], errorStyle: 'SOV structure, respectful tone' },
-  english:          { fillers: ['Oh', 'Wait', 'Actually', 'You know na?'], errorStyle: 'Indian English: "only" as emphasis, "na?" at end' },
+  english:          { fillers: ['Oh', 'Wait', 'Actually', 'Hmm', 'Let me see', 'Oh dear'], errorStyle: 'Polite, slightly confused elderly person speaking natural English' },
   marathi:          { fillers: ['अरे', 'बरं', 'हो ना'], errorStyle: 'Marathi verb endings, -cha / -la' },
 };
 
@@ -119,7 +119,7 @@ function buildResponseDirective(lang) {
     punjabi:          'Write your ENTIRE reply in Punjabi Gurmukhi script. Every single word.',
     malayalam:        'Write your ENTIRE reply in Malayalam script. Every single word.',
     odia:             'Write your ENTIRE reply in Odia script. Every single word.',
-    english:          'Write in Indian English. Add one Hindi word (arrey/accha/haan) as natural filler.',
+    english:          'Write in PURE English only. Do NOT use ANY Hindi words. Sound like an educated Indian speaking natural English.',
     marathi:          'Write in Marathi using Devanagari script. Use Marathi vocabulary, not Hindi.',
   };
   return directives[lang] || directives.english;

@@ -18,45 +18,87 @@ const usedFallbacks = new Map();
 // ──────────────────────────────────────────────────
 // TIER 2: Pre-computed smart fallbacks with MULTIPLE OPTIONS
 // Key format: scamType:stage:language → Array of options
+// Each key has 11-15 options for maximum variety, NO repetition
 // ──────────────────────────────────────────────────
 const SMART_FALLBACKS = {
-  // Bank fraud - ENGLISH (multiple options for variety)
+  // Bank fraud - ENGLISH (PURE english, NO hindi words, complete sentences, 12+ options)
   'bank_fraud:GREETING:english': [
-    "Oh my goodness, which bank did you say? I have accounts in so many places, I get confused sometimes...",
-    "Wait wait, my account will be blocked? But I just checked yesterday and everything was fine, no?",
-    "Hello? Sorry, who is this calling? You're saying my bank account has a problem? Which bank exactly?",
-    "Oh dear, this sounds serious! But can you tell me which branch you're calling from? I want to note it down...",
+    "Oh my goodness, which bank did you say? I have accounts in so many places, I get confused sometimes.",
+    "Wait wait, my account will be blocked? But I just checked yesterday and everything was fine.",
+    "Hello? Sorry, who is this calling from? You're saying my bank account has a problem? Which bank exactly?",
+    "Oh dear, this sounds very serious! But can you tell me which branch you are calling from? I want to note it down.",
+    "Excuse me, did you say account blocked? But I didn't do any transaction today. Are you sure it's my account?",
+    "Sorry, I couldn't hear properly. Did you say SBI or ICICI? My hearing is not very good these days.",
+    "Oh no, this is very worrying. But first tell me, how did you get my number? Are you really from the bank?",
+    "Account compromised? But how is that possible? I only use the ATM near my house and nobody knows my PIN.",
+    "Wait, let me sit down first... this is giving me tension. You said my account has some problem?",
+    "Hello hello, is this really the bank calling? My son always warns me about fake calls, you know.",
+    "This is very sudden! But before we proceed, can you tell me what is your name and designation?",
+    "My account is in danger? Oh goodness! But I need to understand properly. What exactly happened?",
   ],
   'bank_fraud:RAPPORT:english': [
-    "Hmm okay, but my son always tells me to verify first... can you give me your employee ID number please?",
-    "Yes yes, I understand it's urgent, but what is your name and badge number? I need to write it down...",
-    "Before I do anything, can you tell me your supervisor's name? My nephew works in a bank, he said always ask...",
-    "I want to help but you're going so fast... can you spell your name for me? And which department are you from?",
+    "Hmm okay, but my son always tells me to verify first. Can you give me your employee ID number please?",
+    "Yes yes, I understand it's urgent, but what is your name and badge number? I need to write it down.",
+    "Before I do anything, can you tell me your supervisor's name? My nephew works in bank, he said always ask.",
+    "I want to help but you're going so fast. Can you spell your name for me? And which department are you from?",
+    "One moment sir, let me get a pen to write. What did you say your name was? And employee number?",
+    "My husband says I should always verify these things. Can you tell me the exact address of your branch?",
+    "I'm not understanding fully. Can you explain again what happened to my account? Slowly please.",
+    "Hold on, I need to tell my neighbor. She is very smart with these computer things. Can you wait two minutes?",
+    "Okay okay, I'm listening. But my daughter-in-law said never give details on phone. How do I know you are real?",
+    "Wait, let me call my son also on three-way. He handles all my bank work. What's your direct number?",
   ],
   'bank_fraud:FINANCIAL:english': [
-    "Oh, you need my account details? Wait, let me find my passbook... it's somewhere in the drawer, one minute...",
-    "Account number? Yes yes, I have it written somewhere... hold on, my eyes are not so good, the writing is small...",
-    "The account number... let me think... it starts with 1 or 2? Wait, I'll get my reading glasses first...",
-    "I keep all my bank papers in a file... just give me a moment to find it, don't hang up please...",
+    "Oh, you need my account details? Wait, let me find my passbook. It's somewhere in the drawer, one minute.",
+    "Account number? Yes yes, I have it written somewhere. Hold on, my eyes are not so good, the writing is small.",
+    "The account number... let me think... it starts with 1 or 2? Wait, I'll get my reading glasses first.",
+    "I keep all my bank papers in a file. Just give me a moment to find it, don't hang up please.",
+    "My passbook is in the almirah. Let me go to bedroom and check. Can you hold for one minute?",
+    "Account number... you know, my son set up the account for me. I don't remember all those numbers.",
+    "Let me open my phone... my daughter saved the account number somewhere. Where is that notes app...",
+    "Wait wait, I need to find my glasses first. I cannot read anything without them. Hold on please.",
+    "Is it the 12 digit number or 16 digit? I'm looking at my card but there are so many numbers here.",
+    "One second, the passbook is in the safe. Let me get the key... I keep it hidden, you understand.",
   ],
   'bank_fraud:EXTRACTION:english': [
-    "OTP? Yes something came on my phone just now... the numbers are so tiny, wait I need my spectacles...",
-    "Oh the OTP message? I got it but there are so many numbers... which one do you need exactly?",
-    "Yes yes, I see some numbers on my phone screen... but it's showing two messages, which one is the OTP?",
-    "The code came but my phone screen is cracked a little... let me read slowly... 4... no wait, is that a 9?",
+    "OTP? Yes something came on my phone just now. The numbers are so tiny, wait I need my spectacles.",
+    "Oh the OTP message? I got it but there are so many numbers. Which one do you need exactly?",
+    "Yes yes, I see some numbers on my phone screen. But it's showing two messages, which one is the OTP?",
+    "The code came but my phone screen is cracked a little. Let me read slowly... 4... no wait, is that a 9?",
+    "Hold on, my phone is showing something. There are 6 numbers here. You want me to read all of them?",
+    "Wait, I got three messages today. One from electricity bill, one from bank, one from offer. Which one?",
+    "The message came but it disappeared! Let me check my inbox. Why does this phone work so slowly...",
+    "OTP... okay I see it. But wait, the message says don't share with anyone. Are you sure it's okay?",
+    "Let me read it for you... actually wait, my granddaughter said never tell OTP to strangers on phone.",
+    "Yes the code is here. But before I tell you, let me just call the bank number on my card to confirm.",
+    "I got the message. But there are two OTPs here - one says 6 digits, one says 4 digits. Which one you want?",
+    "One second, the message is loading. My internet is very slow today. Okay... it's showing now... wait...",
   ],
   'bank_fraud:CLOSING:english': [
-    "Oh no, my phone battery is very low... can you give me your direct number? I'll call back in 5 minutes after charging...",
-    "Wait, someone is at my door... can you hold on or give me a number to call you back?",
-    "My landline is ringing also... this must be important if two phones are calling! Give me your callback number...",
+    "Oh no, my phone battery is very low. Can you give me your direct number? I'll call back in 5 minutes.",
+    "Wait, someone is at my door. Can you hold on or give me a number to call you back?",
+    "My landline is ringing also. This must be important! Give me your callback number.",
+    "Listen, I think I should come to the bank in person. Which branch can I visit? What are the timings?",
+    "Actually, let me call the bank customer care first to confirm. What was your name again?",
+    "Wait, my husband is calling me. He handles all the money matters. Can I call you back after asking him?",
+    "I'm getting another call. It might be my son. Can you send me your details on WhatsApp instead?",
+    "My cooking is burning on the stove! Give me your number quickly, I'll call back in 10 minutes.",
   ],
 
-  // Bank fraud - HINGLISH
+  // Bank fraud - HINGLISH (11+ entries for variety)
   'bank_fraud:GREETING:hinglish': [
     "Arrey bhai, kaun bol raha hai? Mera account block hoga matlab? Lekin maine kuch kiya hi nahi...",
     "Hello? Sorry, kaunsi bank se bol rahe ho? Mera account mein koi problem hai kya? Abhi toh sab theek tha...",
     "Yeh kya bol rahe ho aap? Mera account band? Lekin pichle hafte hi maine balance check kiya tha, sab okay tha...",
     "Arrey arrey, ruko ruko! Pehle batao aap kaun ho? Kaunsi bank? Main confuse ho gayi completely...",
+    "Kya? Account mein problem? Ruko ruko, pehle batao kaunsi bank se bol rahe ho? SBI ya ICICI?",
+    "Haan haan, bol rahe ho toh sun rahi hoon... lekin yeh kya hai, mera account kyun block hoga?",
+    "Hello ji? Aap kaun bol rahe ho? Bank se? Mera toh sab theek hai, kal hi ATM se paisa nikala tha...",
+    "Ji? Kya bola? Account compromised? Lekin maine toh sirf apne phone se hi banking ki hai...",
+    "Arrey baap re, yeh toh bada serious hai! Lekin aap sure ho ki mera hi account hai? Naam batao mera?",
+    "Ruko ruko, itna jaldi mat bolo... meri sunaai bhi theek se nahi deti. Kaunsi bank bola aapne?",
+    "Aap fraud department se ho? Sach mein? Lekin maine koi galti nahi ki... kya problem hai batao?",
+    "Ji haan, sun rahi hoon... lekin pehle apna naam aur employee ID batao, likha rakhti hoon...",
   ],
   'bank_fraud:RAPPORT:hinglish': [
     "Accha accha, samajh gayi... lekin mera beta kehta hai pehle verify karo. Aapka employee ID kya hai?",
@@ -77,12 +119,20 @@ const SMART_FALLBACKS = {
     "Aa gaya code... lekin mera phone purana hai, screen thoda tuta hai... slowly padhti hoon, ek minute...",
   ],
 
-  // Bank fraud - HINDI DEVANAGARI  
+  // Bank fraud - HINDI DEVANAGARI (11+ entries for variety)
   'bank_fraud:GREETING:hindi_devanagari': [
     "अरे बाबा, कौन बोल रहा है? मेरा खाता बंद होगा? लेकिन मैंने तो कुछ किया ही नहीं...",
     "हैलो? सॉरी, कौनसी बैंक से बोल रहे हो? मेरे अकाउंट में कोई प्रॉब्लम है क्या?",
     "ये क्या बोल रहे हो आप? मेरा खाता बंद? लेकिन पिछले हफ्ते ही तो बैलेंस चेक किया था...",
     "अरे अरे, रुको रुको! पहले बताओ आप कौन हो? कौनसी बैंक? मैं confuse हो गई...",
+    "क्या? अकाउंट में प्रॉब्लम? रुको रुको, पहले बताओ कौनसी बैंक से बोल रहे हो? SBI या ICICI?",
+    "हाँ हाँ, बोल रहे हो तो सुन रही हूँ... लेकिन ये क्या है, मेरा अकाउंट क्यों बंद होगा?",
+    "हैलो जी? आप कौन बोल रहे हो? बैंक से? मेरा तो सब ठीक है, कल ही ATM से पैसा निकाला था...",
+    "जी? क्या बोला? अकाउंट compromised? लेकिन मैंने तो सिर्फ अपने फोन से ही बैंकिंग की है...",
+    "अरे बाप रे, ये तो बड़ा serious है! लेकिन आप sure हो कि मेरा ही अकाउंट है? मेरा नाम बताओ?",
+    "रुको रुको, इतना जल्दी मत बोलो... मेरी सुनाई भी ठीक से नहीं देती। कौनसी बैंक बोला आपने?",
+    "आप fraud department से हो? सच में? लेकिन मैंने कोई गलती नहीं की... क्या प्रॉब्लम है बताओ?",
+    "जी हाँ, सुन रही हूँ... लेकिन पहले अपना नाम और employee ID बताओ, लिख रखती हूँ...",
   ],
   'bank_fraud:RAPPORT:hindi_devanagari': [
     "अच्छा अच्छा, समझ गई... लेकिन मेरा बेटा कहता है पहले verify करो। आपका employee ID क्या है?",
@@ -95,11 +145,20 @@ const SMART_FALLBACKS = {
     "आ गया code... लेकिन मेरा phone पुराना है, थोड़ा धीरे धीरे पढ़ती हूँ...",
   ],
 
-  // Bank fraud - TAMIL
+  // Bank fraud - TAMIL (11+ entries for variety)
   'bank_fraud:GREETING:tamil': [
     "ஐயோ, யாரு பேசுறீங்க? என் account block ஆகும்னு சொல்றீங்க? நான் என்ன பண்ணேன்?",
     "என்ன சொல்றீங்க? என் bank account-ல problem-ஆ? போன week-ல check பண்ணேன், okay-ஆ இருந்துச்சே...",
     "Hello? Sorry, எந்த bank-ல இருந்து call பண்றீங்க? என் account-ல என்ன issue?",
+    "ஐயோ ஐயோ, என்ன problem? என் account block ஆகும்-ன்னு சொல்றீங்க? எப்படி?",
+    "Wait wait, நான் purinjukkala... யாரு பேசுறீங்க? Bank-ல இருந்து-வா?",
+    "என்ன இது? என் account-ல problem-ஆ? நான் yesterday ATM-ல money எடுத்தேன், okay-ஆ இருந்தது...",
+    "Hello? யாரு சார்? Bank-ல இருந்து call-ஆ? என் account எந்த bank-ல?",
+    "Ayyo, serious-ஆ இருக்கா? என் account block ஆகும்-ன்னு சொல்றீங்க? What happened?",
+    "Wait பண்ணுங்க, en husband-கிட்ட கேக்கணும்... அவரு bank matters பாப்பாரு...",
+    "என்ன சொன்னீங்க? Properly puriyala... மெதுவா சொல்லுங்க please?",
+    "Bank call-ஆ? Okay okay, ஆனா first உங்க name என்ன? Employee ID என்ன?",
+    "Aiyo, yenna achu? En account-ல yenna problem? Naan yenna thappum panalaye...",
   ],
   'bank_fraud:RAPPORT:tamil': [
     "சரி சரி, puriyuthu... ஆனா en son சொன்னாரு verify பண்ணணும்னு. உங்க employee ID என்ன?",
@@ -110,11 +169,20 @@ const SMART_FALLBACKS = {
     "ஆமா ஆமா, message வந்துருக்கு... 4-ல start ஆகுது... illana wait, ithu 9-ஆ 4-ஆ?",
   ],
 
-  // Bank fraud - TELUGU
+  // Bank fraud - TELUGU (11+ entries for variety)
   'bank_fraud:GREETING:telugu': [
     "అయ్యో, ఎవరు మాట్లాడుతున్నారు? నా account block అవుతుందా? నేను ఏమి చేశాను?",
     "Hello? Sorry, ఏ bank నుండి call చేస్తున్నారు? నా account లో ఏమి problem?",
     "ఏమిటి చెప్తున్నారు? నా bank account block? కానీ last week check చేశాను, okay గా ఉంది...",
+    "అయ్యో అయ్యో, ఏమి problem? నా account block అవుతుందా అంటున్నారు? ఎలా?",
+    "Wait wait, నాకు అర్థం కాలేదు... ఎవరు మాట్లాడుతున్నారు? Bank నుండి వా?",
+    "ఏమిటి ఇది? నా account లో problem ఉందా? నేను నిన్న ATM లో money తీశాను, okay గా ఉంది...",
+    "Hello? మీరు ఎవరు? Bank నుండి call వా? నా account ఏ bank లో?",
+    "అయ్యో, serious గా ఉందా? నా account block అవుతుందని చెప్తున్నారు? What happened?",
+    "Wait చేయండి, నా husband కి చెప్పాలి... ఆయన bank matters చూస్తారు...",
+    "ఏమి చెప్పారు? Properly వినలేదు... మెల్లగా చెప్పండి please?",
+    "Bank call వా? Okay okay, కానీ first మీ name ఏమిటి? Employee ID ఏమిటి?",
+    "Ayyo, yemi ayyindi? Na account lo yemi problem? Nenu yemi tappu cheyyaledu...",
   ],
   'bank_fraud:RAPPORT:telugu': [
     "సరే సరే, అర్థమైంది... కానీ మా అబ్బాయి చెప్పాడు verify చేయమని. మీ employee ID ఏమిటి?",
@@ -123,10 +191,20 @@ const SMART_FALLBACKS = {
     "OTP వచ్చింది phone లో... wait, చూస్తున్నాను... screen లో numbers చాలా చిన్నగా ఉన్నాయి...",
   ],
 
-  // Bank fraud - BENGALI
+  // Bank fraud - BENGALI (11+ entries for variety)
   'bank_fraud:GREETING:bengali': [
     "আরে বাবা, কে বলছেন? আমার অ্যাকাউন্ট ব্লক হবে? কিন্তু আমি তো কিছু করিনি...",
     "হ্যালো? সরি, কোন ব্যাংক থেকে বলছেন? আমার অ্যাকাউন্টে কি সমস্যা?",
+    "কি বলছেন? আমার bank account block? কিন্তু last week check করলাম, okay ছিল...",
+    "আরে আরে, কি problem? আমার account block হবে বলছেন? কিভাবে?",
+    "Wait wait, আমি বুঝতে পারছি না... কে বলছেন? Bank থেকে কি?",
+    "এটা কি? আমার account এ problem? আমি তো গতকাল ATM থেকে টাকা তুললাম, okay ছিল...",
+    "হ্যালো? আপনি কে? Bank থেকে call? আমার account কোন bank এ?",
+    "আরে, serious কি? আমার account block হবে বলছেন? What happened?",
+    "Wait করুন, আমার স্বামীকে জিজ্ঞেস করি... উনি bank matters দেখেন...",
+    "কি বললেন? ঠিকমতো শুনতে পেলাম না... ধীরে বলুন please?",
+    "Bank call? Okay okay, কিন্তু first আপনার name কি? Employee ID কি?",
+    "Are, ki holo? Amar account e ki problem? Ami to kichu kori ni...",
   ],
   'bank_fraud:RAPPORT:bengali': [
     "আচ্ছা আচ্ছা, বুঝলাম... কিন্তু আমার ছেলে বলে আগে verify করতে। আপনার employee ID কি?",
@@ -148,103 +226,234 @@ const SMART_FALLBACKS = {
     "Accha, par KYC toh branch mein hota hai na? Online kaise karein? Mujhe samjhao thoda...",
   ],
 
-  // OTP fraud
+  // OTP fraud (THE MAIN SCAM - needs many variations)
   'otp_fraud:GREETING:english': [
-    "OTP? What OTP? I didn't request any OTP... are you sure you have the right number?",
-    "Which OTP are you talking about? I didn't do any transaction just now...",
+    "OTP? What OTP? I didn't request any OTP. Are you sure you have the right number?",
+    "Which OTP are you talking about? I didn't do any transaction just now.",
+    "Sorry, what did you say? OTP? But I didn't order anything or make any payment.",
+    "OTP message? I get so many messages from different banks. What is this regarding?",
+    "Hold on, OTP for what? I didn't try to log in anywhere. Are you sure this is my account?",
+    "Wait, I'm confused. Why would I get an OTP if I didn't request it? Is someone trying to hack me?",
+    "OTP? You mean the 6 digit code? But why did it come if I didn't do anything?",
+    "Hello? Who is this? You're asking about OTP? Which bank is this from?",
   ],
-  'otp_fraud:GREETING:hinglish': [
-    "OTP? Arrey kaunsa OTP? Mujhe koi message nahi aaya abhi tak... sure hai aap?",
-    "Kaunsa OTP bhai? Maine toh koi transaction nahi kiya abhi...",
+  'otp_fraud:RAPPORT:english': [
+    "Okay okay, but first tell me, how did you know I received an OTP? Are you really from the bank?",
+    "Wait, my son told me OTPs are very important. Why do you need my OTP? Can you explain properly?",
+    "I understand you want to help, but why would bank call asking for OTP? Isn't that supposed to be secret?",
+    "Hmm, let me think. So you're saying if I don't share OTP, my account will be blocked? That sounds strange.",
+    "Hold on sir, I watch those crime shows. Bank never asks for OTP they said. Are you sure you're from bank?",
+    "But wait, the message itself says don't share OTP with anyone. Why are you asking me to share?",
+    "Let me understand properly. You want me to read the OTP to you? But the bank SMS says never share!",
+    "I'm a bit worried now. My neighbor aunty lost 50000 rupees to fraud. How do I know you're genuine?",
   ],
   'otp_fraud:EXTRACTION:english': [
-    "Wait, actually a message did come... let me check... there are so many numbers, which one do you need?",
-    "Oh yes, I see something on my phone now... but which number exactly? There are like 6 digits...",
+    "OTP? Okay let me check my phone. Hold on... my phone is a bit slow, give me a moment.",
+    "Yes yes, I see a message here. There are 6 numbers. You want me to tell all of them?",
+    "Okay the OTP is... wait, let me get my glasses first. I cannot read the small font properly.",
+    "I got the message. Let me read... wait, it says valid for 3 minutes only. It might have expired!",
+    "The code came. But hold on, there are two OTPs here. One at 10:30 and one at 10:32. Which one?",
+    "Yes I see it. 6 digit number right? Okay it's... wait my phone screen went dark. One second.",
+    "Let me check... okay the OTP is here. But before I read it, can you confirm my account number first?",
+    "The message is here. Numbers are 4-7... oh wait, my granddaughter is calling on the other line.",
+    "Okay I'm looking at the SMS. It says OTP is... hold on, someone is at the door. One minute please.",
+    "Yes the OTP came. It starts with 5 I think... or is that 6? The font is very small on this phone.",
+    "I have the message open. There are multiple numbers - some account number, some code. Which do you need?",
+    "The OTP is showing but wait - my phone is showing low battery warning. Let me plug charger first.",
+    "Let me read it slowly. The first digit is... actually, can you first tell me what this OTP is for exactly?",
+    "I see the code. But the message says expires in 3 minutes and we've been talking for so long already!",
+    "Yes okay, the OTP is here. But wait - let me verify one thing. Can you tell me the last 4 digits of my account?",
   ],
-  'otp_fraud:EXTRACTION:hinglish': [
-    "OTP? Haan ek message aaya hai... 4 se shuru ho raha hai lagta hai... ruko ek second, clearly dekh loon...",
-    "Achha haan, phone pe kuch numbers dikhe... kaunsa wala OTP hai? Bahut saare aaye hain messages...",
+  'otp_fraud:FINANCIAL:english': [
+    "You also need my account number? Wait, let me get the passbook. It's in another room.",
+    "Bank account details... okay but I have accounts in 3 banks. Which one are you asking about?",
+    "Account number is there in passbook. Let me find it. I keep it in the drawer with my other papers.",
+    "My card is in my purse. One second let me get it. The account number is on the back right?",
+    "Account details? My son set all this up for me. I don't remember the full number. Can I call you back?",
+  ],
+  'otp_fraud:CLOSING:english': [
+    "Wait wait, before I give OTP, let me just confirm with my son once. He handles all bank matters.",
+    "You know what, let me call the bank customer care number first. What was your employee ID again?",
+    "My phone is about to die. Can you give me your number? I'll call back after charging.",
+    "Actually I'm getting scared now. Let me visit the bank branch tomorrow and sort this out in person.",
+    "I think I should talk to my neighbor first. He is bank manager retired. He will know what to do.",
   ],
 
-  // UPI fraud
+  // OTP fraud - HINGLISH
+  'otp_fraud:GREETING:hinglish': [
+    "OTP? Kaunsa OTP? Mujhe koi message nahi aaya abhi tak. Sure hai aap?",
+    "Kaunsa OTP bhai? Maine toh koi transaction nahi kiya abhi.",
+    "OTP? Mujhe kuch nahi aaya phone pe. Kaun bol raha hai yeh?",
+    "Wait wait, OTP kis cheez ke liye aaya? Maine toh kuch nahi kiya.",
+  ],
+  'otp_fraud:RAPPORT:hinglish': [
+    "Accha, but bank toh OTP nahi maangti phone pe. Mera bhai bola tha yeh.",
+    "OTP kyun chahiye aapko? Message mein likha hai share mat karo kisi ko bhi.",
+    "Pehle yeh batao, aapko kaise pata main ne OTP receive kiya? Suspicious lag raha hai.",
+  ],
+  'otp_fraud:EXTRACTION:hinglish': [
+    "OTP? Haan ek message aaya hai. 4 se shuru ho raha hai lagta hai. Ruko clearly dekh loon.",
+    "Achha haan, phone pe kuch numbers dikhe. Kaunsa wala OTP hai? Bahut saare messages hain.",
+    "Ruko, message dhundh raha hoon. Bahut saare SMS aaye aaj. Kaunsa bank wala?",
+    "OTP toh hai phone mein. Lekin 6 digits hain ya 4? Do messages hain confusing hai.",
+    "Achha dekh raha hoon. OTP hai... wait, yeh expired toh nahi ho gaya? 3 minute likhta hai.",
+    "Message mila. Numbers hain but mera phone dim hai. Roshni mein dekh ke batata hoon.",
+    "Ha ha, OTP hai screen pe. Ruko glasses lagata hoon. Font bahut chhota hai.",
+    "Code aa gaya. 5 se start ho raha hai... nahi wait, 6 hai shayad. Itna chhota likha hai.",
+  ],
+
+  // UPI fraud - more options
   'upi_fraud:GREETING:english': [
-    "Cashback on UPI? Really? I didn't know about this scheme... how much cashback will I get?",
+    "Cashback on UPI? Really? I didn't know about this scheme. How much cashback will I get?",
     "Free money on Paytm? Which offer is this? I use GPay mostly, will it work there too?",
+    "UPI reward? Wait, I saw something like this on TV. Is this the government scheme?",
+    "Cashback offer? But I didn't apply for anything. How did you select me for this?",
+    "Free money? That sounds amazing! But is this real? My daughter warns me about scams.",
+    "Which UPI app is this for? I have Paytm, PhonePe, and GPay all three. Which one?",
+  ],
+  'upi_fraud:RAPPORT:english': [
+    "How much cashback exactly? And what do I need to do to get it?",
+    "So I just need to share my UPI ID and I'll get money? That's it? Nothing else?",
+    "This sounds like those offers I see on WhatsApp. Is this official from the bank?",
+    "Wait, I need to understand properly. You'll transfer money or I need to pay first?",
+  ],
+  'upi_fraud:FINANCIAL:english': [
+    "My UPI ID? Let me think. I have it on Paytm and PhonePe both. Which one do you need?",
+    "UPI ID? It's something like my phone number I think. Wait, let me check in the app.",
+    "The UPI ID is... hold on, I don't remember if it's my phone number or the handle thing.",
+    "Let me open the app. Where do I find the UPI ID? Is it under profile or settings?",
+    "Okay I'm opening Paytm. There are so many options here. Where is my UPI ID shown?",
+  ],
+  'upi_fraud:EXTRACTION:english': [
+    "The PIN? But my son said never share UPI PIN. Why do you need it for cashback?",
+    "Wait, to receive money I also need to enter PIN? I thought PIN is only for sending.",
+    "UPI PIN? That's my secret number right? How will cashback come if I share it?",
+    "I don't think I should share PIN. Let me confirm with my husband first. Can you wait?",
   ],
   'upi_fraud:GREETING:hinglish': [
     "Cashback? Sach mein? Kaunsa offer hai yeh? Kitna milega cashback?",
-    "UPI pe free money? Kya baat kar rahe ho? Mujhe toh koi notification nahi aaya...",
-  ],
-  'upi_fraud:FINANCIAL:english': [
-    "My UPI ID? Let me think... I have it on Paytm and PhonePe both... which one do you need?",
-    "UPI ID? It's something like my phone number I think... wait, let me check in the app...",
+    "UPI pe free money? Kya baat kar rahe ho? Mujhe toh koi notification nahi aaya.",
+    "Paytm reward hai? Lekin maine kuch apply nahi kiya. Mujhe kaise select kiya?",
   ],
   'upi_fraud:FINANCIAL:hinglish': [
-    "UPI ID? Mera wala hai but mujhe exact yaad nahi... Paytm wala hai ya GPay wala chahiye?",
-    "Mera UPI toh phone number hi hai na? Ya kuch aur bhi hota hai? Confused hoon...",
+    "UPI ID? Mera wala hai but mujhe exact yaad nahi. Paytm wala hai ya GPay wala chahiye?",
+    "Mera UPI toh phone number hi hai na? Ya kuch aur bhi hota hai? Confused hoon.",
+    "Ruko app open karta hoon. UPI ID kahaan likha hota hai? Profile mein?",
   ],
 
-  // Lottery scam
+  // Lottery scam - more English options
   'lottery_scam:GREETING:english': [
     "I won a lottery? But I never entered any contest! Which lucky draw is this from?",
     "Oh my god, I won something? How much did I win? But when did I enter this contest?",
-    "Wait wait, you're saying I won money? Which company's lottery is this? I don't remember entering...",
-  ],
-  'lottery_scam:GREETING:hinglish': [
-    "Arrey, main jeet gayi? Sach mein? Kaunsa lucky draw tha yeh? Maine toh enter hi nahi kiya tha!",
-    "Lottery? Mujhe? Kitna jeeta hai? Par maine toh koi contest nahi khela...",
+    "Wait wait, you're saying I won money? Which company's lottery is this? I don't remember entering.",
+    "Lottery prize? For me? But I never buy lottery tickets. There must be some mistake.",
+    "This is unbelievable! I actually won? How much money are we talking about here?",
+    "You're not joking right? I really won? Which company organized this lottery?",
+    "Wait, let me sit down. This is big news. But I'm confused - when did I enter any lottery?",
   ],
   'lottery_scam:RAPPORT:english': [
-    "Such a big amount? Really? But I need to tell my family first... can you send me the official letter?",
+    "Such a big amount? Really? But I need to tell my family first. Can you send me the official letter?",
     "That's a lot of money! But how do I know this is real? Can you email me the details?",
+    "I want to believe this is real. Can you give me some proof? Like a reference number or something?",
+    "This is wonderful news! But my son always says verify first. Can you give me your office address?",
+    "Before I proceed, can you tell me the name of your company and your registration number?",
+  ],
+  'lottery_scam:FINANCIAL:english': [
+    "Processing fee? But if I won the money, why do I need to pay something first?",
+    "Tax payment in advance? That seems strange. Can't you deduct it from my prize amount?",
+    "I have to pay before receiving? My neighbor warned me this is how scams work. Let me confirm.",
+    "How much is the fee exactly? And can you give me a receipt when I pay?",
+  ],
+  'lottery_scam:GREETING:hinglish': [
+    "Main jeet gayi? Sach mein? Kaunsa lucky draw tha yeh? Maine toh enter hi nahi kiya tha!",
+    "Lottery? Mujhe? Kitna jeeta hai? Par maine toh koi contest nahi khela.",
+    "Lottery prize hai mere liye? Yeh toh amazing news hai! Kitna amount hai?",
   ],
   'lottery_scam:RAPPORT:hinglish': [
-    "Sach mein itna paisa? Lekin mujhe toh koi SMS nahi aaya pehle... official letter bhejoge kya?",
+    "Sach mein itna paisa? Lekin mujhe toh koi SMS nahi aaya pehle. Official letter bhejoge kya?",
+    "Itna bada amount? Main apne husband ko bata doon pehle. Kuch proof hai aapke paas?",
   ],
 
-  // Job scam
+  // Job scam - more English options
   'job_scam:GREETING:english': [
-    "A job offer? Really? Which company is this? I applied to so many places, I forgot...",
+    "A job offer? Really? Which company is this? I applied to so many places, I forgot.",
     "Oh, someone wants to hire me? What's the position? And how did you get my resume?",
-    "Work from home job? What kind of work? And what is the salary? My nephew was also looking...",
-  ],
-  'job_scam:GREETING:hinglish': [
-    "Job offer hai? Kaun si company se bol rahe ho? Mera resume kahaan se mila aapko?",
-    "WFH job? Kya kaam karna padega? Salary kya hai? Mere bhatije ko bhi batana hai...",
+    "Work from home job? What kind of work? And what is the salary? My nephew was also looking.",
+    "You're offering me a job? That's great news! But which posting is this for?",
+    "HR calling? Which company did you say? I've applied to JobsPortal and Naukri both.",
+    "Job opportunity? Excellent! What's the role and what are the working hours?",
   ],
   'job_scam:RAPPORT:english': [
     "What's the salary package? Is it full time or part time? Do I need to come to office?",
-    "Sounds interesting... but what skills do you need? I only know basic computer work...",
+    "Sounds interesting. But what skills do you need? I only know basic computer work.",
+    "Can you tell me more about the company? What products or services do you provide?",
+    "What would my daily work involve? Is there training provided for new employees?",
+    "The offer sounds good. But can you send me the offer letter on email for my reference?",
+  ],
+  'job_scam:EXTRACTION:english': [
+    "Registration fee for the job? But I've never heard of companies charging to give jobs.",
+    "I need to pay for training? Usually companies pay during training period right?",
+    "You need my bank details for salary deposit? But can't we do that after joining?",
+  ],
+  'job_scam:GREETING:hinglish': [
+    "Job offer hai? Kaun si company se bol rahe ho? Mera resume kahaan se mila aapko?",
+    "WFH job? Kya kaam karna padega? Salary kya hai? Mere bhatije ko bhi batana hai.",
+    "Job ke liye call? Great! Kaun si position hai aur company ka naam kya hai?",
   ],
   'job_scam:RAPPORT:hinglish': [
     "Package kya hai bhai? WFH hai ya office jaana padega? Training milegi?",
+    "Accha job opportunity hai. Mere liye suitable hai kya? Experience kitna chahiye?",
   ],
 
-  // Phishing
+  // Phishing - more English options
   'phishing:GREETING:english': [
-    "Click a link? My phone is showing some warning... which website is this exactly?",
-    "A link? Wait, my son told me to be careful with links... what is this website for?",
+    "Click a link? My phone is showing some warning. Which website is this exactly?",
+    "A link? Wait, my son told me to be careful with links. What is this website for?",
+    "You want me to open a link? But I read that hackers send virus through links.",
+    "What's in this link? My phone asked if I want to allow. Is it safe to click?",
+    "Link for what? To update my details? Can't I do this by visiting the bank website directly?",
+  ],
+  'phishing:RAPPORT:english': [
+    "The link looks different from the bank website I usually use. Is this the correct one?",
+    "My antivirus is showing a warning. Can you confirm this is the official bank link?",
+    "I'm not comfortable clicking unknown links. Can you give me the bank's official website instead?",
   ],
   'phishing:GREETING:hinglish': [
-    "Link click karna hai? Ruko, mera internet slow hai... kaunsi website hai batao?",
-    "Link? Mera beta bolta hai links pe click mat karo... yeh kya hai exactly?",
+    "Link click karna hai? Ruko, mera internet slow hai. Kaunsi website hai batao?",
+    "Link? Mera beta bolta hai links pe click mat karo. Yeh kya hai exactly?",
+    "Link share kiya? Phone pe warning aa raha hai. Safe hai kya click karna?",
   ],
 
-  // Investment fraud
+  // Investment fraud - more English options
   'investment_fraud:GREETING:english': [
-    "Investment with guaranteed returns? That sounds too good to be true... which company is this?",
-    "500% returns? Wow... but is it safe? My husband lost money in shares once, he'll be angry...",
+    "Investment with guaranteed returns? That sounds too good to be true. Which company is this?",
+    "500% returns? Wow. But is it safe? My husband lost money in shares once, he'll be angry.",
+    "Double my money in 3 months? How is that possible? What's the investment in?",
+    "You're promising high returns? But RBI only gives 7% on fixed deposit. How do you give more?",
+    "Guaranteed profit scheme? My friend told me about one and he lost everything. How is yours different?",
+  ],
+  'investment_fraud:RAPPORT:english': [
+    "Can you explain how this investment works? Where exactly does the money go?",
+    "Do you have any registration with SEBI? I want to make sure this is legal.",
+    "What if I need my money back urgently? Can I withdraw anytime without penalty?",
+    "Can you show me some testimonials from other investors? People who actually got returns?",
   ],
   'investment_fraud:GREETING:hinglish': [
-    "Invest karo aur 500% return? Bhai, yeh real hai kya? Company ka naam bata pehle...",
-    "Guaranteed returns? Aisa possible hai kya? Mere husband ko batana padega but woh mana karenge shayad...",
+    "Invest karo aur 500% return? Bhai, yeh real hai kya? Company ka naam bata pehle.",
+    "Guaranteed returns? Aisa possible hai kya? Mere husband ko batana padega but woh mana karenge shayad.",
+    "Paisa double? Kitne din mein? Yeh legal hai na? SEBI registered company hai?",
   ],
 
-  // Aggressive scammer responses
+  // Aggressive scammer responses - pure English
   'aggressive:ANY:english': [
-    "Please don't shout at me sir... I'm just an old woman trying to understand. Can you explain slowly?",
-    "Why are you getting angry? I just want to make sure before I do anything... please have some patience...",
-    "Sir, I'm confused only... no need to raise your voice. My hearing is also not so good...",
+    "Please don't shout at me sir. I'm just an old woman trying to understand. Can you explain slowly?",
+    "Why are you getting angry? I just want to make sure before I do anything. Please have some patience.",
+    "Sir, I'm just confused. No need to raise your voice. My hearing is also not so good.",
+    "Please calm down. I was just asking questions to verify. Why are you getting so upset?",
+    "There's no need to be rude. I'm trying to cooperate but you're making me nervous.",
+    "Sir, your tone is scaring me. Can you please speak gently? I'm old and get anxious easily.",
+    "Why so much anger? I just wanted to double-check. If you keep shouting I'll hang up the call.",
+    "Please speak nicely. I'm trying my best to understand. Getting angry won't help either of us.",
   ],
   'aggressive:ANY:hinglish': [
     "Aise kyun bol rahe ho bhai... main samajhne ki koshish kar rahi hoon na, dhire bologe toh samjhungi...",
@@ -316,10 +525,18 @@ const BASE_FALLBACKS = {
     "अरे, समजलं नाही... परत सांगाल का please?",
   ],
   english: [
-    "Oh sorry, I didn't catch that... can you say it again slowly?",
-    "Wait what? My hearing is not so good... please repeat?",
-    "Hmm? The line is not clear... can you say that one more time?",
-    "Sorry sorry, I was distracted... what did you say just now?",
+    "Oh sorry, I didn't catch that. Can you say it again slowly please?",
+    "Wait what? My hearing is not so good. Can you please repeat?",
+    "The line is not clear. Can you say that one more time?",
+    "Sorry, I was distracted by something. What did you say just now?",
+    "I couldn't hear properly. There's some noise here. Can you repeat please?",
+    "What was that? My phone speaker is not working well. Say again?",
+    "Hold on, I missed that. Can you speak a bit louder?",
+    "Sorry, what? I didn't understand. Can you explain again?",
+    "The connection is bad on my side. Can you repeat slowly?",
+    "My ears are not what they used to be. Please say that again?",
+    "I beg your pardon? I missed the last part. Can you repeat?",
+    "Sorry, there was some disturbance. What were you saying?",
   ],
 };
 

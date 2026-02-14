@@ -124,15 +124,15 @@ function validateAndCleanReply(reply, persona, langData) {
     cleaned = cleaned.replace(namePrefix, '');
   }
 
-  // Enforce 3-sentence max (increased from 2 for more natural conversation)
+  // Enforce 2-sentence max for concise, human-like responses
   const sentences = cleaned.match(/[^.!?।]+[.!?।]+/g) || [cleaned];
-  if (sentences.length > 3) {
-    cleaned = sentences.slice(0, 3).join(' ').trim();
+  if (sentences.length > 2) {
+    cleaned = sentences.slice(0, 2).join(' ').trim();
   }
 
-  // Hard length cap (300 chars for more natural responses)
-  if (cleaned.length > 300) {
-    cleaned = cleaned.slice(0, 280).trim();
+  // Hard length cap (250 chars for natural responses)
+  if (cleaned.length > 250) {
+    cleaned = cleaned.slice(0, 240).trim();
     if (!cleaned.endsWith('?') && !cleaned.endsWith('...')) cleaned += '...';
   }
 
