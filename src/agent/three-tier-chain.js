@@ -1,41 +1,253 @@
 /**
- * KAVACH — 3-Tier Response Chain (SUPREMACY LAYER 3)
- * Tier 1: Gemini Flash → Falls back to alternate models on rate limit
- * Tier 2: Pre-computed smart fallbacks with ROTATION (never repeat)
- * Tier 3: Base language fallback (always works)
- *
- * THE ENDPOINT NEVER DIES. ONE 500 error = permanent score deduction.
- * RATE LIMIT HANDLING: Primary → Secondary → Tertiary models
+ * KAVACH — Multi-LLM Response Chain (NATIONAL SPOTLIGHT GRADE)
+ * ═══════════════════════════════════════════════════════════════════
+ * PRIMARY: Groq (llama-3.3-70b) — 200ms latency, 30 RPM free
+ * SECONDARY: Gemini Flash — 15 RPM, 1M TPD free (3-model cascade)
+ * TERTIARY: Claude Haiku — Paid fallback (ultra-reliable)
+ * ULTIMATE: Human Pool — 120+ contextual responses (NEVER fails)
+ * ═══════════════════════════════════════════════════════════════════
+ * THE ENDPOINT NEVER DIES. EVEN IF ALL 4 LLMs FAIL.
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { getSmartFallback } = require('../fallback/human-pool');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize LLM clients
+const genAI = process.env.GEMINI_API_KEY 
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) 
+  : null;
 
-// Model cascade for rate limit handling
-const MODELS = [
-  'gemini-2.0-flash-lite',      // Primary: Fast, efficient
-  'gemini-1.5-flash',           // Secondary: Stable fallback  
-  'gemini-1.5-flash-8b',        // Tertiary: Lower quota usage
+// ══════════════════════════════════════════════════════════════════
+// LLM CONFIGURATION
+// ══════════════════════════════════════════════════════════════════
+
+// Groq (PRIMARY) — Fastest, free tier
+const GROQ_CONFIG = {
+  apiKey: process.env.GROQ_API_KEY,
+  model: 'llama-3.3-70b-versatile',
+  baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+};
+
+// Gemini cascade (SECONDARY)
+const GEMINI_MODELS = [
+  'gemini-2.0-flash-lite',      // Fast, efficient
+  'gemini-1.5-flash',           // Stable fallback  
+  'gemini-1.5-flash-8b',        // Lower quota usage
 ];
 
-let currentModelIndex = 0;
-let lastRateLimitTime = 0;
+// Claude (TERTIARY) — Ultra-reliable paid
+const CLAUDE_CONFIG = {
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  model: 'claude-3-haiku-20240307',
+  baseUrl: 'https://api.anthropic.com/v1/messages',
+};
 
-// Get current model with automatic rotation on rate limit
-function getModel() {
-  // Reset to primary model after 60 seconds
-  if (Date.now() - lastRateLimitTime > 60000) {
-    currentModelIndex = 0;
+let currentGeminiIndex = 0;
+let lastGeminiRateLimit = 0;
+let lastGroqRateLimit = 0;
+
+// Get current Gemini model with rotation
+function getGeminiModel() {
+  if (!genAI) return null;
+  if (Date.now() - lastGeminiRateLimit > 60000) {
+    currentGeminiIndex = 0;
   }
-  return genAI.getGenerativeModel({ model: MODELS[currentModelIndex] });
+  return genAI.getGenerativeModel({ model: GEMINI_MODELS[currentGeminiIndex] });
 }
 
-// Switch to next model on rate limit
+function rotateGemini() {
+  lastGeminiRateLimit = Date.now();
+  currentGeminiIndex = (currentGeminiIndex + 1) % GEMINI_MODELS.length;
+  console.log(`[KAVACH] Gemini rate limit. Rotating to: ${GEMINI_MODELS[currentGeminiIndex]}`);
+}
+
+// Track which provider was throttled recently
+function isGroqThrottled() {
+  return Date.now() - lastGroqRateLimit < 30000; // 30s cooldown
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GROQ CALL — Primary LLM (200ms latency)
+// ══════════════════════════════════════════════════════════════════
+async function callGroq(systemPrompt, messages, timeout = 5000) {
+  if (!GROQ_CONFIG.apiKey || isGroqThrottled()) {
+    return { ok: false, skipped: true };
+  }
+
+  try {
+    const groqMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages.map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content
+      }))
+    ];
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(GROQ_CONFIG.baseUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_CONFIG.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: GROQ_CONFIG.model,
+        messages: groqMessages,
+        max_tokens: 150,
+        temperature: 0.9,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        lastGroqRateLimit = Date.now();
+        console.log('[KAVACH] Groq rate limited. Cooling down 30s.');
+        return { ok: false, rateLimited: true };
+      }
+      return { ok: false, error: `Groq ${response.status}` };
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content?.trim();
+    
+    if (!text || text.length < 10) {
+      return { ok: false, error: 'Response too short' };
+    }
+
+    return { ok: true, text, provider: 'groq' };
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      return { ok: false, timedOut: true };
+    }
+    return { ok: false, error: e.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GEMINI CALL — Secondary LLM (3-model cascade)
+// ══════════════════════════════════════════════════════════════════
+async function callGemini(systemPrompt, messages, timeout = 6000) {
+  if (!genAI) return { ok: false, skipped: true };
+
+  for (let attempt = 0; attempt < GEMINI_MODELS.length; attempt++) {
+    const model = getGeminiModel();
+    if (!model) return { ok: false, error: 'No Gemini model' };
+
+    try {
+      const history = [];
+      let lastUserMsg = '';
+      
+      for (let i = 0; i < messages.length - 1; i++) {
+        const msg = messages[i];
+        if (msg.role === 'user') {
+          history.push({ role: 'user', parts: [{ text: msg.content }] });
+        } else if (msg.role === 'assistant') {
+          history.push({ role: 'model', parts: [{ text: msg.content }] });
+        }
+      }
+      
+      lastUserMsg = messages[messages.length - 1]?.content || 'Hello';
+      
+      const chat = model.startChat({
+        history,
+        generationConfig: {
+          maxOutputTokens: 150,
+          temperature: 0.92,
+        },
+      });
+      
+      const fullPrompt = systemPrompt + '\n\nScammer says: "' + lastUserMsg + '"\n\nRespond as your persona (1-2 sentences, conversational, DO NOT repeat):';
+      
+      const resultPromise = chat.sendMessage(fullPrompt);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), timeout)
+      );
+      
+      const result = await Promise.race([resultPromise, timeoutPromise]);
+      const text = result.response.text().trim();
+      
+      if (!text || text.length < 10) {
+        return { ok: false, error: 'Response too short' };
+      }
+      
+      return { ok: true, text, provider: 'gemini', model: GEMINI_MODELS[currentGeminiIndex] };
+    } catch (e) {
+      const errMsg = e.message || '';
+      if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('rate') || errMsg.includes('exhausted')) {
+        rotateGemini();
+        continue;
+      }
+      if (errMsg === 'timeout') {
+        return { ok: false, timedOut: true };
+      }
+      return { ok: false, error: errMsg };
+    }
+  }
+
+  return { ok: false, error: 'All Gemini models exhausted' };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CLAUDE CALL — Tertiary LLM (paid, ultra-reliable)
+// ══════════════════════════════════════════════════════════════════
+async function callClaude(systemPrompt, messages, timeout = 8000) {
+  if (!CLAUDE_CONFIG.apiKey) return { ok: false, skipped: true };
+
+  try {
+    const claudeMessages = messages.map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content
+    }));
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(CLAUDE_CONFIG.baseUrl, {
+      method: 'POST',
+      headers: {
+        'x-api-key': CLAUDE_CONFIG.apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: CLAUDE_CONFIG.model,
+        max_tokens: 150,
+        system: systemPrompt,
+        messages: claudeMessages,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return { ok: false, error: `Claude ${response.status}` };
+    }
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text?.trim();
+    
+    if (!text || text.length < 10) {
+      return { ok: false, error: 'Response too short' };
+    }
+
+    return { ok: true, text, provider: 'claude' };
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      return { ok: false, timedOut: true };
+    }
+    return { ok: false, error: e.message };
+  }
+}
+
+// Legacy compatibility
 function rotateModel() {
-  lastRateLimitTime = Date.now();
-  currentModelIndex = (currentModelIndex + 1) % MODELS.length;
-  console.log(`[KAVACH] Rate limit hit. Rotating to model: ${MODELS[currentModelIndex]}`);
+  rotateGemini();
 }
 
 // Track used fallbacks AND LLM responses per session to prevent ALL repetition
@@ -645,112 +857,102 @@ function trackUsedResponse(response, sessionId) {
 }
 
 /**
- * Get response using 3-tier chain with MODEL ROTATION on rate limit.
- * If Gemini fails → try next model → smart fallback → base fallback.
+ * Get response using MULTI-LLM CASCADE with rate limit handling.
+ * Order: Groq (200ms) → Gemini (cascade) → Claude → Human Pool → Smart Fallback.
  * THE ENDPOINT NEVER DIES.
  */
 async function getResponseTiered(systemPrompt, messages, session, languageData) {
   const startMs = Date.now();
   const sessionId = session.sessionId || 'default';
-
-  // Try up to 3 models on rate limit
-  let llmResponse = null;
-  let lastError = null;
   
-  for (let attempt = 0; attempt < MODELS.length; attempt++) {
-    const model = getModel();
-    
-    const geminiCall = (async () => {
-      try {
-        // Convert messages to Gemini chat history format
-        const history = [];
-        let lastUserMsg = '';
-        
-        for (let i = 0; i < messages.length - 1; i++) {
-          const msg = messages[i];
-          if (msg.role === 'user') {
-            history.push({ role: 'user', parts: [{ text: msg.content }] });
-          } else if (msg.role === 'assistant') {
-            history.push({ role: 'model', parts: [{ text: msg.content }] });
-          }
-        }
-        
-        // Last message is always user (current scammer message)
-        lastUserMsg = messages[messages.length - 1]?.content || 'Hello';
-        
-        const chat = model.startChat({
-          history,
-          generationConfig: {
-            maxOutputTokens: 150,
-            temperature: 0.92,  // Higher for more variety
-          },
-        });
-        
-        const fullPrompt = systemPrompt + '\n\nScammer says: "' + lastUserMsg + '"\n\nRespond as your persona (1-2 sentences, conversational, DO NOT repeat anything you said before):';
-        const result = await chat.sendMessage(fullPrompt);
-        const text = result.response.text().trim();
-        
-        // Validate response
-        if (!text || text.length < 10) {
-          return { ok: false, error: 'Response too short' };
-        }
-        
-        return { ok: true, text };
-      } catch (e) {
-        const errMsg = e.message || '';
-        // Check for rate limit errors
-        if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('rate') || errMsg.includes('Resource has been exhausted')) {
-          return { ok: false, rateLimited: true, error: errMsg };
-        }
-        return { ok: false, error: errMsg };
-      }
-    })();
-
-    // Race against timeout
-    const timeout = new Promise(resolve =>
-      setTimeout(() => resolve({ ok: false, timedOut: true }), 6000)
-    );
-
-    const result = await Promise.race([geminiCall, timeout]);
-    
-    if (result.rateLimited) {
-      rotateModel();
-      lastError = result.error;
-      continue; // Try next model
-    }
-    
-    if (result.ok && result.text && result.text.length >= 10) {
-      // Check if response is too similar to previous ones
-      if (isResponseTooSimilar(result.text, sessionId)) {
-        // Try to get a different response by adding variety instruction
-        continue;
-      }
-      
-      trackUsedResponse(result.text, sessionId);
-      return { reply: result.text, tier: 1, ms: Date.now() - startMs, model: MODELS[currentModelIndex] };
-    }
-    
-    lastError = result.error || 'Unknown error';
-    break; // Non-rate-limit error, go to fallback
-  }
-
-  // TIER 2: Smart fallback with rotation (never repeat)
+  // Get session context for fallbacks
   const scamType = session.scamType || 'bank_fraud';
   const stage = session.stage || 'GREETING';
   let lang = languageData?.language || 'english';
-  
   if (!lang || lang === 'unknown') lang = 'english';
-
-  // Check if scammer was aggressive
+  
   const wasAggressive = session.emotionHist && 
     (session.emotionHist.includes('HIGH') || session.emotionHist.includes('aggressive'));
+  const emotion = wasAggressive ? 'HIGH' : 'MEDIUM';
   
-  // Try keys in order of specificity
+  // Get used IDs for this session
+  if (!usedResponses.has(sessionId)) {
+    usedResponses.set(sessionId, new Set());
+  }
+  const usedIds = usedResponses.get(sessionId);
+
+  // ════════════════════════════════════════════════════════════
+  // TIER 1: GROQ (Primary — 200ms latency)
+  // ════════════════════════════════════════════════════════════
+  const groqResult = await callGroq(systemPrompt, messages);
+  if (groqResult.ok && groqResult.text && groqResult.text.length >= 10) {
+    if (!isResponseTooSimilar(groqResult.text, sessionId)) {
+      trackUsedResponse(groqResult.text, sessionId);
+      return { 
+        reply: groqResult.text, 
+        tier: 1, 
+        provider: 'groq',
+        ms: Date.now() - startMs 
+      };
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TIER 2: GEMINI (Secondary — 3-model cascade)
+  // ════════════════════════════════════════════════════════════
+  const geminiResult = await callGemini(systemPrompt, messages);
+  if (geminiResult.ok && geminiResult.text && geminiResult.text.length >= 10) {
+    if (!isResponseTooSimilar(geminiResult.text, sessionId)) {
+      trackUsedResponse(geminiResult.text, sessionId);
+      return { 
+        reply: geminiResult.text, 
+        tier: 2, 
+        provider: 'gemini',
+        model: geminiResult.model,
+        ms: Date.now() - startMs 
+      };
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TIER 3: CLAUDE (Tertiary — paid, ultra-reliable)
+  // ════════════════════════════════════════════════════════════
+  const claudeResult = await callClaude(systemPrompt, messages);
+  if (claudeResult.ok && claudeResult.text && claudeResult.text.length >= 10) {
+    if (!isResponseTooSimilar(claudeResult.text, sessionId)) {
+      trackUsedResponse(claudeResult.text, sessionId);
+      return { 
+        reply: claudeResult.text, 
+        tier: 3, 
+        provider: 'claude',
+        ms: Date.now() - startMs 
+      };
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TIER 4: HUMAN POOL (120+ contextual responses — NEVER fails)
+  // ════════════════════════════════════════════════════════════
+  const humanFallback = getSmartFallback(scamType, stage, lang, emotion, usedIds);
+  if (humanFallback && humanFallback.id) {
+    usedIds.add(humanFallback.id);
+    return {
+      reply: humanFallback.text,
+      tier: 4,
+      provider: 'human-pool',
+      fallbackId: humanFallback.id,
+      ms: Date.now() - startMs
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // TIER 5: SMART FALLBACKS (legacy backup)
+  // ════════════════════════════════════════════════════════════
   const keysToTry = wasAggressive 
     ? [`aggressive:ANY:${lang}`, `aggressive:ANY:english`, `aggressive:ANY:hinglish`]
     : [
         `${scamType}:${stage}:${lang}`,
-        `${scamType}:RAPPORT:${lang}`,  // Added RAPPORT as common fallback
+        `${scamType}:RAPPORT:${lang}`,
         `${scamType}:GREETING:${lang}`,
         `${scamType}:${stage}:english`,
         `${scamType}:RAPPORT:english`,
@@ -759,7 +961,7 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
         `bank_fraud:RAPPORT:${lang}`,
         `bank_fraud:GREETING:${lang}`,
         `bank_fraud:GREETING:english`,
-        `otp_fraud:EXTRACTION:${lang}`,  // OTP is common
+        `otp_fraud:EXTRACTION:${lang}`,
         `otp_fraud:EXTRACTION:english`,
       ];
 
@@ -769,12 +971,14 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
       const fallback = getRotatedFallback(options, sessionId);
       if (fallback && !isResponseTooSimilar(fallback, sessionId)) {
         trackUsedResponse(fallback, sessionId);
-        return { reply: fallback, tier: 2, ms: Date.now() - startMs };
+        return { reply: fallback, tier: 5, provider: 'smart-fallback', ms: Date.now() - startMs };
       }
     }
   }
 
-  // TIER 3: Base language fallback with rotation
+  // ════════════════════════════════════════════════════════════
+  // TIER 6: BASE LANGUAGE FALLBACK (ultimate backup)
+  // ════════════════════════════════════════════════════════════
   const baseOptions = BASE_FALLBACKS[lang] || BASE_FALLBACKS.english || BASE_FALLBACKS.hinglish;
   const baseFallback = getRotatedFallback(baseOptions, sessionId + '_base');
   
@@ -784,7 +988,8 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
   
   return {
     reply: baseFallback || "Sorry, I didn't understand... can you repeat please?",
-    tier: 3,
+    tier: 6,
+    provider: 'base-fallback',
     ms: Date.now() - startMs,
   };
 }

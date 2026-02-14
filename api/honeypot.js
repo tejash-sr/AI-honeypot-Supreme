@@ -1,17 +1,18 @@
 /**
- * KAVACH — GOD LEVEL Honeypot Handler
+ * KAVACH — NATIONAL SPOTLIGHT Honeypot Handler
  * ═══════════════════════════════════════════════════
  * 
  * 6 SUPREMACY LAYERS working in concert:
  * Layer 1: Identity Lock Prompt (actor-technique persona anchoring)
  * Layer 2: Language Mirror Engine (3ms script detection + mirroring)
- * Layer 3: 3-Tier Response Chain (Gemini → Smart Fallback → Base Fallback)
+ * Layer 3: MULTI-LLM Response Chain (Groq → Gemini → Claude → Human Pool)
  * Layer 4: Intel Aggregator (cumulative across ALL turns)
  * Layer 5: Engagement Arc (10-15 turn stalling arsenal)
  * Layer 6: GUVI Callback (fires with rich intel, police-report agentNotes)
  *
  * + SHIELD Evidence Engine for court-ready reports
  * + Response Guard that strips AI tells with zero tolerance
+ * + 120+ Human Fallback Pool (NEVER fails)
  *
  * THE ENDPOINT NEVER RETURNS 500. EVER.
  * 
@@ -280,6 +281,8 @@ module.exports = async function handler(req, res) {
           turn:          session.turnCount,
           stalling:      stallingTactic || 'llm_generated',
           responseTier:  response.tier,
+          provider:      response.provider || 'unknown',
+          model:         response.model || null,
         },
         language: {
           detected:   languageData.language,
@@ -312,6 +315,8 @@ module.exports = async function handler(req, res) {
         processingMs,
         shieldCaseId:      session.caseId,
         responseTier:      response.tier,
+        provider:          response.provider || 'unknown',
+        model:             response.model || null,
         emotion,
         stallingTactic:    stallingTactic || 'llm_generated',
         extractedIntel:    session.intel.toJSON(),
