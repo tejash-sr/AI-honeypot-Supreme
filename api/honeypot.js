@@ -117,6 +117,7 @@ module.exports = async function handler(req, res) {
         emotionHist:   [],
         lastLanguage:  languageData.language,
         caseId:        `KAVACH-2026-${sessionId.slice(-6).toUpperCase()}`,
+        replyHistory:  [],  // NEW: Track previous replies for anti-repetition
       });
     }
     const session = SESSIONS.get(sessionId);
@@ -160,7 +161,27 @@ module.exports = async function handler(req, res) {
     const stallingTactic = session.stalling.getNextTactic(session.stage);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // LAYER 1: BUILD IDENTITY LOCK PROMPT
+    // EXTRACT PREVIOUS HONEYPOT REPLIES (for anti-repetition)
+    // ═══════════════════════════════════════════════════════════════════════
+    const previousReplies = [];
+    if (conversationHistory && conversationHistory.length > 0) {
+      for (const m of conversationHistory) {
+        if (m.sender === 'honeypot' || m.sender === 'assistant') {
+          previousReplies.push(m.text);
+        }
+      }
+    }
+    // Also add replies stored in session (in case conversationHistory is incomplete)
+    if (session.replyHistory && session.replyHistory.length > 0) {
+      for (const r of session.replyHistory) {
+        if (!previousReplies.includes(r)) {
+          previousReplies.push(r);
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LAYER 1: BUILD IDENTITY LOCK PROMPT (with anti-repetition)
     // ═══════════════════════════════════════════════════════════════════════
     const systemPrompt = buildIdentityLockPrompt(
       session.persona,
@@ -168,7 +189,8 @@ module.exports = async function handler(req, res) {
       scamData,
       session.stage,
       emotion,
-      stallingTactic
+      stallingTactic,
+      previousReplies  // NEW: Pass previous replies for anti-repetition
     );
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -208,6 +230,13 @@ module.exports = async function handler(req, res) {
     // ═══════════════════════════════════════════════════════════════════════
     session.turnCount++;
     session.lastLanguage = languageData.language;
+    
+    // Store reply for anti-repetition (keep last 10 to prevent memory bloat)
+    if (!session.replyHistory) session.replyHistory = [];
+    session.replyHistory.push(reply);
+    if (session.replyHistory.length > 10) {
+      session.replyHistory = session.replyHistory.slice(-10);
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // SHIELD EVIDENCE REPORT

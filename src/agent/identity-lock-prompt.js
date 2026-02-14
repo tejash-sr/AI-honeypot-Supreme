@@ -13,9 +13,10 @@
  * @param {string} stage - Current conversation stage
  * @param {string} emotion - Detected emotion level (LOW/MEDIUM/HIGH)
  * @param {string|null} stallingTactic - Specific stalling approach for this turn
+ * @param {Array} previousReplies - Array of previous honeypot responses (for anti-repetition)
  * @returns {string} Complete system prompt
  */
-function buildIdentityLockPrompt(persona, languageData, scamData, stage, emotion, stallingTactic) {
+function buildIdentityLockPrompt(persona, languageData, scamData, stage, emotion, stallingTactic, previousReplies = []) {
 
   // THE IDENTITY LOCK — Not a roleplay instruction. A state declaration.
   const identityCore = `
@@ -92,7 +93,36 @@ ${stallingTactic ? `THIS TURN: Use this specific stalling approach: "${stallingT
 If you violate any rule above, you have failed. The response should look like it was
 typed by a ${persona.age}-year-old on a ${persona.phone} — imperfect, human, real.`.trim();
 
-  return [identityCore, languageAnchor, emotionalState, scamContext, turnObjective, outputContract].join('\n\n---\n\n');
+  // ANTI-REPETITION BLOCK — prevents same questions/phrases
+  let antiRepetition = '';
+  if (previousReplies && previousReplies.length > 0) {
+    const recentReplies = previousReplies.slice(-5); // Last 5 replies
+    antiRepetition = `
+---
+
+CRITICAL — DO NOT REPEAT YOURSELF:
+You already said these things in this conversation:
+${recentReplies.map((r, i) => `${i + 1}. "${r}"`).join('\n')}
+
+🚫 DO NOT ask the same question again.
+🚫 DO NOT use the same phrases or words.
+🚫 Use a COMPLETELY DIFFERENT approach this turn.
+🚫 If you asked for employee ID before, ask for something else (branch address, supervisor name, callback number).
+🚫 If you asked "which bank", now ask "which branch" or "what's your name".
+
+VARIETY SUGGESTIONS FOR THIS TURN:
+- Ask for their supervisor's name
+- Say you need to check with your son/daughter first
+- Ask what time you can call back
+- Say your phone battery is low
+- Ask them to email you the details instead
+- Say you want to visit the branch in person
+- Mention you're feeling unwell and need a moment
+- Ask for official letter/document proof
+`.trim();
+  }
+
+  return [identityCore, languageAnchor, emotionalState, scamContext, turnObjective, outputContract, antiRepetition].filter(Boolean).join('\n\n---\n\n');
 }
 
 module.exports = { buildIdentityLockPrompt };
