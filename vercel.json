@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "functions": {
+    "api/honeypot.js": {
+      "maxDuration": 30,
+      "memory": 512
+    },
+    "api/health.js": {
+      "maxDuration": 10,
+      "memory": 256
+    },
+    "api/metrics.js": {
+      "maxDuration": 10,
+      "memory": 256
+    },
+    "api/shield-report.js": {
+      "maxDuration": 10,
+      "memory": 256
+    }
+  },
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/honeypot", "dest": "/api/honeypot.js" },
+    { "src": "/api/health",   "dest": "/api/health.js" },
+    { "src": "/api/metrics",  "dest": "/api/metrics.js" },
+    { "src": "/api/shield-report", "dest": "/api/shield-report.js" },
+    { "src": "/api/(.*)",     "dest": "/api/$1" },
+    { "src": "/(.*)",         "dest": "/public/$1" }
+  ]
+}

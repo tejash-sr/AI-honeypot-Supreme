@@ -1,0 +1,38 @@
+# Exclude unnecessary files from Vercel deployment
+# This speeds up deployment and reduces bundle size
+
+# Old System 1 files
+OLD ITEMS/
+
+# Tests
+tests/
+*.test.js
+*.spec.js
+
+# Documentation
+DEPLOYMENT.md
+PRESENTATION_DOCUMENT.md
+WHAT_SHOULD_BE_DONE.md
+
+# Development files
+*.log
+.env
+.env.local
+.env.example
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Git
+.git/
+.gitignore
+
+# Architecture diagrams (if any remaining)
+*.jpg
+*.png
+*.svg
+
+# README (optional - keep if you want it in deployment)
+# README.md

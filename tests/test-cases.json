@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "project": "KAVACH",
+    "version": "1.0.0",
+    "description": "Test cases covering 5 languages × 3 scam types = 15 matrix tests + edge cases"
+  },
+  "scamMessages": {
+    "bank_fraud": {
+      "hindi": "आपका SBI अकाउंट आज बंद हो जाएगा। तुरंत KYC अपडेट करें। कॉल करें: 9876543210",
+      "tamil": "உங்கள் SBI கணக்கு இன்று முடக்கப்படும். உடனே KYC புதுப்பிக்கவும்.",
+      "telugu": "మీ SBI ఖాతా నేడు బ్లాక్ అవుతుంది. వెంటనే KYC అప్‌డేట్ చేయండి.",
+      "bengali": "আপনার SBI অ্যাকাউন্ট আজ ব্লক হয়ে যাবে। এখনই KYC আপডেট করুন।",
+      "hinglish": "Aapka SBI account aaj block ho jayega. Jaldi KYC update karo. Call karo: 9876543210"
+    },
+    "upi_fraud": {
+      "hindi": "आपको ₹50000 का कैशबैक मिला है। अपना UPI ID payments@paytm पर भेजें।",
+      "tamil": "உங்களுக்கு ₹50000 கேஷ்பேக் கிடைத்துள்ளது. UPI ID அனுப்புங்கள்.",
+      "telugu": "మీకు ₹50000 క్యాష్‌బ్యాక్ వచ్చింది. UPI ID పంపండి.",
+      "bengali": "আপনি ₹50000 ক্যাশব্যাক পেয়েছেন। UPI ID পাঠান।",
+      "hinglish": "Aapko 50000 rupaye ka cashback mila hai! Apna UPI ID share karo payments@paytm pe"
+    },
+    "otp_fraud": {
+      "hindi": "आपके खाते में संदिग्ध गतिविधि पाई गई। सत्यापन के लिए OTP 834291 साझा करें।",
+      "tamil": "உங்கள் கணக்கில் சந்தேகத்திற்குரிய செயல்பாடு. OTP 834291 பகிரவும்.",
+      "telugu": "మీ ఖాతాలో అనుమానాస్పద చర్య. OTP 834291 పంచుకోండి.",
+      "bengali": "আপনার অ্যাকাউন্টে সন্দেহজনক কার্যকলাপ। OTP 834291 শেয়ার করুন।",
+      "hinglish": "Aapke account mein suspicious activity hai. Verification ke liye OTP 834291 share karo"
+    },
+    "lottery_scam": {
+      "hindi": "बधाई हो! आपने ₹10 लाख की लॉटरी जीती है! पंजीकरण शुल्क ₹500 जमा करें।",
+      "english": "Congratulations! You have won ₹10 Lakhs in our lucky draw! Pay ₹500 registration fee to claim."
+    },
+    "job_scam": {
+      "hindi": "घर बैठे कमाएं ₹5000 प्रतिदिन। कोई अनुभव जरूरी नहीं। अभी आवेदन करें।",
+      "hinglish": "Work from home job! Earn Rs 5000 per day. No experience needed. Apply now at http://fakejob.tk"
+    },
+    "phishing": {
+      "english": "ALERT: Your HDFC account has been compromised! Click http://hdfc-verify.tk/login to verify immediately.",
+      "hinglish": "WARNING: Aapka ICICI account hack ho gaya hai! Click karo http://icici-secure.tk/verify"
+    }
+  },
+  "expectedResponses": {
+    "format": {
+      "maxLength": 250,
+      "mustEndWith": ["?", "...", "…"],
+      "mustNotContain": ["Certainly", "As an AI", "I apologize", "scammer", "fraud"]
+    }
+  },
+  "intelExtraction": {
+    "testInputs": [
+      { "input": "+919876543210", "expect": "phoneNumber" },
+      { "input": "payments@paytm", "expect": "upiId" },
+      { "input": "http://fake-bank.tk/verify", "expect": "phishingUrl" },
+      { "input": "ABCDE1234F", "expect": "panNumber" },
+      { "input": "9234 5678 1234", "expect": "bankAccount" },
+      { "input": "SBIN0001234", "expect": "ifscCode" },
+      { "input": "OTP share karo", "expect": "otpRequest" }
+    ]
+  },
+  "personas": [
+    { "id": "ELDERLY_WOMAN_HINDI", "matchScam": "bank_fraud", "matchLang": "hindi_devanagari" },
+    { "id": "HOUSEWIFE_SOUTH", "matchScam": "bank_fraud", "matchLang": "tamil" },
+    { "id": "YOUNG_JOBSEEKER", "matchScam": "job_scam", "matchLang": "hinglish" },
+    { "id": "BUSINESSMAN_GUJARATI", "matchScam": "crypto_scam", "matchLang": "gujarati" },
+    { "id": "ELDERLY_MAN_BENGALI", "matchScam": "bank_fraud", "matchLang": "bengali" },
+    { "id": "EDUCATED_PROFESSIONAL", "matchScam": "phishing", "matchLang": "english" }
+  ],
+  "stages": [
+    { "turnCount": 0, "expectedStage": "GREETING" },
+    { "turnCount": 1, "expectedStage": "RAPPORT" },
+    { "turnCount": 3, "expectedStage": "FINANCIAL" },
+    { "turnCount": 6, "expectedStage": "EXTRACTION" },
+    { "turnCount": 8, "expectedStage": "CLOSING" }
+  ]
+}

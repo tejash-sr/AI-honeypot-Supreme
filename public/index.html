@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAVACH कवच — AI Honeypot Shield Against Scammers</title>
+    <meta name="description" content="KAVACH: India's first agentic AI honeypot that detects scams, engages fraudsters in their own language, and builds court-ready evidence.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --saffron: #FF9933;
+            --saffron-dark: #E68A00;
+            --green-flag: #138808;
+            --blue-ashoka: #000080;
+            --navy: #0A0E27;
+            --navy-light: #111640;
+            --navy-lighter: #1A2055;
+            --text: #F0F0FF;
+            --text-muted: #8E92C4;
+            --glass: rgba(255,255,255,0.04);
+            --glass-border: rgba(255,255,255,0.08);
+            --gradient-tricolor: linear-gradient(135deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
+            --gradient-saffron: linear-gradient(135deg, #FF9933 0%, #E68A00 100%);
+            --gradient-green: linear-gradient(135deg, #138808 0%, #0F6B06 100%);
+            --glow-saffron: 0 0 40px rgba(255,153,51,0.3);
+            --glow-green: 0 0 40px rgba(19,136,8,0.3);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',-apple-system,sans-serif; background:var(--navy); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        .bg-grid {
+            position:fixed; inset:0; z-index:-1;
+            background-image:
+                radial-gradient(circle at 15% 85%, rgba(255,153,51,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 15%, rgba(19,136,8,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(0,0,128,0.05) 0%, transparent 40%);
+        }
+        .bg-grid::after {
+            content:''; position:absolute; inset:0; opacity:0.015;
+            background-image:linear-gradient(rgba(255,153,51,0.3) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,153,51,0.3) 1px, transparent 1px);
+            background-size:60px 60px;
+        }
+
+        /* NAV */
+        nav { position:fixed; top:0; left:0; right:0; z-index:1000; padding:0.75rem 2rem; background:rgba(10,14,39,0.85); backdrop-filter:blur(24px); border-bottom:1px solid var(--glass-border); }
+        .nav-c { max-width:1400px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
+        .logo { display:flex; align-items:center; gap:0.6rem; font-size:1.5rem; font-weight:800; text-decoration:none; }
+        .logo-shield { width:38px; height:38px; border-radius:10px; background:var(--gradient-saffron); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#fff; box-shadow:var(--glow-saffron); }
+        .logo-text { background:var(--gradient-tricolor); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .logo-tag { font-size:0.65rem; font-weight:400; color:var(--text-muted); margin-left:0.25rem; letter-spacing:0.5px; }
+        .nav-links { display:flex; gap:1.75rem; list-style:none; }
+        .nav-links a { color:var(--text-muted); text-decoration:none; font-weight:500; font-size:0.9rem; transition:color 0.2s; }
+        .nav-links a:hover { color:var(--text); }
+        .nav-cta { background:var(--gradient-saffron); color:#fff; padding:0.6rem 1.25rem; border-radius:10px; font-weight:600; font-size:0.9rem; text-decoration:none; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 15px rgba(255,153,51,0.25); }
+        .nav-cta:hover { transform:translateY(-2px); box-shadow:var(--glow-saffron); }
+
+        /* HERO */
+        .hero { min-height:100vh; display:flex; align-items:center; padding:7rem 2rem 4rem; }
+        .hero-inner { max-width:1400px; margin:0 auto; display:grid; grid-template-columns:1.1fr 1fr; gap:4rem; align-items:center; }
+        .hero-badge { display:inline-flex; align-items:center; gap:0.5rem; padding:0.4rem 1rem; border-radius:50px; font-size:0.8rem; font-weight:500; background:rgba(255,153,51,0.1); border:1px solid rgba(255,153,51,0.25); color:var(--saffron); margin-bottom:1.25rem; }
+        .hero-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--saffron); animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.3)} }
+        .hero h1 { font-size:3.75rem; font-weight:900; line-height:1.08; margin-bottom:1.25rem; }
+        .hero h1 .kavach { background:var(--gradient-saffron); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .hero h1 .hindi { font-size:2.5rem; color:var(--saffron); opacity:0.7; }
+        .hero .subtitle { font-size:1.15rem; color:var(--text-muted); line-height:1.7; margin-bottom:2rem; max-width:560px; }
+        .hero-btns { display:flex; gap:1rem; margin-bottom:2.5rem; flex-wrap:wrap; }
+        .btn { padding:0.9rem 1.75rem; border-radius:12px; font-weight:600; font-size:0.95rem; cursor:pointer; transition:all 0.3s; border:none; display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; }
+        .btn-saffron { background:var(--gradient-saffron); color:#fff; box-shadow:0 4px 20px rgba(255,153,51,0.3); }
+        .btn-saffron:hover { transform:translateY(-3px); box-shadow:var(--glow-saffron); }
+        .btn-outline { background:transparent; color:var(--text); border:1px solid var(--glass-border); backdrop-filter:blur(8px); }
+        .btn-outline:hover { border-color:var(--saffron); background:rgba(255,153,51,0.05); }
+        .hero-metrics { display:flex; gap:2.5rem; }
+        .hm { text-align:left; }
+        .hm-val { font-size:2rem; font-weight:800; }
+        .hm-val.saffron { color:var(--saffron); } .hm-val.green { color:var(--green-flag); } .hm-val.blue { color:#4D7FFF; }
+        .hm-label { font-size:0.78rem; color:var(--text-muted); margin-top:2px; }
+
+        .hero-terminal { background:var(--navy-light); border:1px solid var(--glass-border); border-radius:16px; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,0.4); transform:perspective(1200px) rotateY(-4deg) rotateX(3deg); transition:transform 0.5s; }
+        .hero-terminal:hover { transform:perspective(1200px) rotateY(0) rotateX(0); }
+        .term-bar { background:var(--navy-lighter); padding:0.65rem 1rem; display:flex; align-items:center; gap:0.5rem; }
+        .term-dot { width:11px; height:11px; border-radius:50%; }
+        .term-dot.r { background:#FF5F57; } .term-dot.y { background:#FFBD2E; } .term-dot.g { background:#28C840; }
+        .term-title { flex:1; text-align:center; font-size:0.8rem; color:var(--text-muted); }
+        .term-body { padding:1.25rem; font-family:'JetBrains Mono',monospace; font-size:0.82rem; line-height:1.9; }
+        .t-saffron { color:var(--saffron); } .t-green { color:var(--green-flag); } .t-blue { color:#4D7FFF; } .t-muted { color:var(--text-muted); } .t-white { color:var(--text); }
+        .term-line { opacity:0; animation:fadeSlide 0.4s ease forwards; }
+        .term-line:nth-child(1){animation-delay:.1s} .term-line:nth-child(2){animation-delay:.25s}
+        .term-line:nth-child(3){animation-delay:.4s} .term-line:nth-child(4){animation-delay:.55s}
+        .term-line:nth-child(5){animation-delay:.7s} .term-line:nth-child(6){animation-delay:.85s}
+        .term-line:nth-child(7){animation-delay:1s} .term-line:nth-child(8){animation-delay:1.15s}
+        .term-line:nth-child(9){animation-delay:1.3s}
+        @keyframes fadeSlide { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+
+        /* PIPELINE */
+        .pipeline { padding:5rem 2rem; }
+        .section-hdr { text-align:center; max-width:700px; margin:0 auto 3.5rem; }
+        .section-badge { display:inline-block; padding:0.4rem 1rem; border-radius:50px; font-size:0.8rem; font-weight:500; margin-bottom:0.75rem; background:rgba(255,153,51,0.08); border:1px solid rgba(255,153,51,0.2); color:var(--saffron); }
+        .section-hdr h2 { font-size:2.75rem; font-weight:800; margin-bottom:0.75rem; }
+        .section-hdr p { color:var(--text-muted); font-size:1.05rem; line-height:1.7; }
+        .pipeline-flow { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(5,1fr); gap:1rem; position:relative; }
+        .pipeline-flow::before { content:''; position:absolute; top:55px; left:10%; right:10%; height:2px; background:linear-gradient(90deg, var(--saffron), var(--green-flag)); opacity:0.3; }
+        .pipe-step { text-align:center; position:relative; z-index:1; padding:1.5rem 0.75rem; }
+        .pipe-icon { width:56px; height:56px; border-radius:14px; margin:0 auto 1rem; display:flex; align-items:center; justify-content:center; font-size:1.25rem; box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+        .pipe-step:nth-child(1) .pipe-icon { background:linear-gradient(135deg,rgba(255,153,51,0.25),rgba(255,153,51,0.1)); color:var(--saffron); }
+        .pipe-step:nth-child(2) .pipe-icon { background:linear-gradient(135deg,rgba(77,127,255,0.25),rgba(77,127,255,0.1)); color:#4D7FFF; }
+        .pipe-step:nth-child(3) .pipe-icon { background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(139,92,246,0.1)); color:#8B5CF6; }
+        .pipe-step:nth-child(4) .pipe-icon { background:linear-gradient(135deg,rgba(16,185,129,0.25),rgba(16,185,129,0.1)); color:#10B981; }
+        .pipe-step:nth-child(5) .pipe-icon { background:linear-gradient(135deg,rgba(239,68,68,0.25),rgba(239,68,68,0.1)); color:#EF4444; }
+        .pipe-step h4 { font-size:0.95rem; font-weight:700; margin-bottom:0.35rem; }
+        .pipe-step p { font-size:0.78rem; color:var(--text-muted); line-height:1.5; }
+        .pipe-time { font-size:0.65rem; color:var(--saffron); font-weight:600; margin-top:0.35rem; }
+
+        /* FEATURES */
+        .features { padding:5rem 2rem; background:linear-gradient(180deg,transparent,rgba(0,0,128,0.04),transparent); }
+        .feat-grid { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+        .feat-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:18px; padding:1.75rem; transition:all 0.35s; position:relative; overflow:hidden; }
+        .feat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--gradient-saffron); transform:scaleX(0); transition:transform 0.35s; }
+        .feat-card:hover { transform:translateY(-8px); border-color:rgba(255,153,51,0.25); box-shadow:0 16px 40px rgba(0,0,0,0.3); }
+        .feat-card:hover::before { transform:scaleX(1); }
+        .feat-icon { width:50px; height:50px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:1.25rem; }
+        .feat-card h3 { font-size:1.1rem; font-weight:700; margin-bottom:0.5rem; }
+        .feat-card p { color:var(--text-muted); line-height:1.6; font-size:0.9rem; }
+
+        /* LIVE TESTER */
+        .tester { padding:5rem 2rem; }
+        .tester-box { max-width:1100px; margin:0 auto; background:var(--navy-light); border:1px solid var(--glass-border); border-radius:20px; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,0.4); }
+        .tester-top { background:var(--navy-lighter); padding:1rem 1.5rem; border-bottom:1px solid var(--glass-border); display:flex; align-items:center; justify-content:space-between; }
+        .tester-top h3 { font-size:1.1rem; font-weight:600; display:flex; align-items:center; gap:0.6rem; }
+        .tester-top h3 i { color:var(--green-flag); }
+        .status-live { display:flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:50px; background:rgba(19,136,8,0.1); color:var(--green-flag); font-size:0.8rem; font-weight:500; }
+        .status-live .dot { width:7px; height:7px; background:var(--green-flag); border-radius:50%; animation:pulse 2s infinite; }
+        .tester-grid { display:grid; grid-template-columns:1fr 1fr; }
+        .tester-left { padding:1.5rem; border-right:1px solid var(--glass-border); }
+        .tester-right { padding:1.5rem; display:flex; flex-direction:column; }
+        .input-row { margin-bottom:1rem; }
+        .input-row label { display:block; font-size:0.8rem; font-weight:500; color:var(--text-muted); margin-bottom:0.35rem; }
+        .input-row input, .input-row textarea { width:100%; padding:0.75rem; background:var(--navy); border:1px solid var(--glass-border); border-radius:10px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:0.82rem; transition:border-color 0.2s; }
+        .input-row input:focus, .input-row textarea:focus { outline:none; border-color:var(--saffron); }
+        .input-row textarea { min-height:100px; resize:vertical; }
+        .presets { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+        .preset-btn { padding:0.35rem 0.7rem; border-radius:8px; font-size:0.72rem; font-weight:500; background:var(--glass); border:1px solid var(--glass-border); color:var(--text-muted); cursor:pointer; transition:all 0.2s; }
+        .preset-btn:hover { border-color:var(--saffron); color:var(--saffron); background:rgba(255,153,51,0.05); }
+        .preset-btn.active { border-color:var(--saffron); color:var(--saffron); background:rgba(255,153,51,0.1); }
+        .btn-send { width:100%; padding:0.85rem; background:var(--gradient-saffron); color:#fff; border:none; border-radius:10px; font-weight:600; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.2s; }
+        .btn-send:hover { transform:translateY(-2px); box-shadow:var(--glow-saffron); }
+        .btn-send:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+        .btn-send .spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
+        .btn-send.loading .spinner { display:block; }
+        .btn-send.loading .btn-label { display:none; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+
+        .conv-panel { flex:1; display:flex; flex-direction:column; }
+        .conv-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
+        .conv-header h4 { font-size:0.9rem; font-weight:600; color:var(--text-muted); }
+        .conv-clear { padding:0.3rem 0.6rem; border-radius:6px; font-size:0.7rem; background:var(--glass); border:1px solid var(--glass-border); color:var(--text-muted); cursor:pointer; }
+        .conv-clear:hover { border-color:var(--saffron); color:var(--saffron); }
+        .conv-messages { flex:1; min-height:260px; max-height:400px; overflow-y:auto; background:var(--navy); border:1px solid var(--glass-border); border-radius:12px; padding:1rem; font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .conv-messages::-webkit-scrollbar { width:4px; }
+        .conv-messages::-webkit-scrollbar-track { background:transparent; }
+        .conv-messages::-webkit-scrollbar-thumb { background:var(--glass-border); border-radius:2px; }
+        .msg { margin-bottom:1rem; padding:0.75rem; border-radius:10px; max-width:85%; animation:msgIn 0.3s ease; }
+        @keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .msg.scammer { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.15); margin-right:auto; }
+        .msg.kavach { background:rgba(19,136,8,0.08); border:1px solid rgba(19,136,8,0.15); margin-left:auto; }
+        .msg-sender { font-size:0.68rem; font-weight:600; margin-bottom:0.3rem; }
+        .msg.scammer .msg-sender { color:#EF4444; }
+        .msg.kavach .msg-sender { color:var(--green-flag); }
+        .msg-text { color:var(--text); line-height:1.5; word-break:break-word; }
+        .msg-meta { font-size:0.6rem; color:var(--text-muted); margin-top:0.35rem; display:flex; gap:0.75rem; flex-wrap:wrap; }
+
+        /* INTEL PANEL */
+        .intel-panel { max-width:1100px; margin:-1rem auto 0; padding:0 2rem; }
+        .intel-box { background:var(--navy-light); border:1px solid var(--glass-border); border-radius:0 0 20px 20px; padding:1.5rem; }
+        .intel-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:1rem; }
+        .intel-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:12px; padding:1rem; }
+        .intel-card h5 { font-size:0.75rem; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.5px; }
+        .intel-card .value { font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:var(--saffron); word-break:break-all; }
+        .intel-card .value.green { color:var(--green-flag); }
+        .intel-card .empty { color:var(--text-muted); font-style:italic; font-size:0.75rem; }
+
+        /* SHIELD */
+        .shield-section { padding:5rem 2rem; background:linear-gradient(180deg,transparent,rgba(19,136,8,0.03),transparent); }
+        .shield-box { max-width:900px; margin:0 auto; background:var(--navy-light); border:1px solid var(--glass-border); border-radius:20px; overflow:hidden; }
+        .shield-header { background:var(--navy-lighter); padding:1.25rem 1.5rem; border-bottom:1px solid var(--glass-border); display:flex; align-items:center; justify-content:space-between; }
+        .shield-header h3 { font-size:1.1rem; font-weight:700; display:flex; align-items:center; gap:0.5rem; }
+        .shield-body { padding:1.5rem; font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .shield-report-content { background:var(--navy); border:1px solid var(--glass-border); border-radius:12px; padding:1.25rem; white-space:pre-wrap; color:var(--text-muted); min-height:150px; line-height:1.8; max-height:500px; overflow-y:auto; }
+        .btn-shield { padding:0.6rem 1.2rem; border-radius:8px; font-size:0.82rem; font-weight:600; background:var(--gradient-green); color:#fff; border:none; cursor:pointer; transition:all 0.2s; }
+        .btn-shield:hover { transform:translateY(-2px); box-shadow:var(--glow-green); }
+        .btn-shield:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+        /* STATS */
+        .stats { padding:5rem 2rem; }
+        .stats-grid { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:1.5rem; }
+        .stat-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:18px; padding:2rem 1.5rem; text-align:center; transition:all 0.3s; }
+        .stat-card:hover { transform:translateY(-5px); border-color:rgba(255,153,51,0.2); }
+        .stat-card i { font-size:1.75rem; margin-bottom:0.75rem; }
+        .stat-card:nth-child(1) i { color:var(--saffron); }
+        .stat-card:nth-child(2) i { color:var(--green-flag); }
+        .stat-card:nth-child(3) i { color:#4D7FFF; }
+        .stat-card:nth-child(4) i { color:#EF4444; }
+        .stat-number { font-size:2.75rem; font-weight:800; margin-bottom:0.25rem; }
+        .stat-card:nth-child(1) .stat-number { color:var(--saffron); }
+        .stat-card:nth-child(2) .stat-number { color:var(--green-flag); }
+        .stat-card:nth-child(3) .stat-number { color:#4D7FFF; }
+        .stat-card:nth-child(4) .stat-number { color:#EF4444; }
+        .stat-label { font-size:0.82rem; color:var(--text-muted); }
+
+        /* FOOTER */
+        footer { padding:4rem 2rem 1.5rem; border-top:1px solid var(--glass-border); background:var(--navy-light); }
+        .footer-tricolor { height:3px; background:var(--gradient-tricolor); border-radius:2px; margin-bottom:1rem; opacity:0.6; }
+        .footer-inner { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:3rem; }
+        .footer-brand h3 { font-size:1.4rem; font-weight:800; background:var(--gradient-tricolor); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:0.75rem; }
+        .footer-brand p { color:var(--text-muted); line-height:1.7; font-size:0.9rem; margin-bottom:1rem; }
+        .footer-links h4 { font-size:0.95rem; font-weight:600; margin-bottom:1rem; }
+        .footer-links ul { list-style:none; }
+        .footer-links li { margin-bottom:0.5rem; }
+        .footer-links a { color:var(--text-muted); text-decoration:none; font-size:0.85rem; transition:color 0.2s; }
+        .footer-links a:hover { color:var(--text); }
+        .footer-bottom { max-width:1200px; margin:2.5rem auto 0; padding-top:1.5rem; border-top:1px solid var(--glass-border); text-align:center; color:var(--text-muted); font-size:0.8rem; }
+
+        @media(max-width:1024px) {
+            .hero-inner { grid-template-columns:1fr; text-align:center; }
+            .hero .subtitle { margin:0 auto 2rem; }
+            .hero-btns { justify-content:center; }
+            .hero-metrics { justify-content:center; }
+            .hero-terminal { max-width:550px; margin:2rem auto 0; transform:none; }
+            .pipeline-flow { grid-template-columns:repeat(3,1fr); }
+            .pipeline-flow::before { display:none; }
+            .feat-grid { grid-template-columns:repeat(2,1fr); }
+            .tester-grid { grid-template-columns:1fr; }
+            .tester-left { border-right:none; border-bottom:1px solid var(--glass-border); }
+            .intel-grid { grid-template-columns:1fr 1fr 1fr; }
+            .stats-grid { grid-template-columns:repeat(2,1fr); }
+            .footer-inner { grid-template-columns:1fr 1fr; }
+        }
+        @media(max-width:768px) {
+            .hero h1 { font-size:2.5rem; }
+            .hero h1 .hindi { font-size:1.75rem; }
+            .section-hdr h2 { font-size:2rem; }
+            .pipeline-flow { grid-template-columns:1fr 1fr; }
+            .feat-grid { grid-template-columns:1fr; }
+            .nav-links { display:none; }
+            .intel-grid { grid-template-columns:1fr; }
+            .footer-inner { grid-template-columns:1fr; text-align:center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <nav>
+        <div class="nav-c">
+            <a href="#" class="logo">
+                <div class="logo-shield">&#x1F6E1;&#xFE0F;</div>
+                <span class="logo-text">KAVACH</span>
+                <span class="logo-tag">&#x0915;&#x0935;&#x091A;</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#pipeline">How It Works</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#tester">Live Demo</a></li>
+                <li><a href="#shield">SHIELD Report</a></li>
+            </ul>
+            <a href="#tester" class="nav-cta"><i class="fas fa-play"></i> Try Live</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <div>
+                <div class="hero-badge"><div class="dot"></div> HCL GUVI India AI Impact Buildathon 2026</div>
+                <h1>
+                    <span class="kavach">KAVACH</span> <span class="hindi">&#x0915;&#x0935;&#x091A;</span><br>
+                    India's AI Shield<br>Against Scammers
+                </h1>
+                <p class="subtitle">
+                    The first agentic AI honeypot that detects scams, engages fraudsters in their own language,
+                    extracts intelligence, and builds court-ready evidence &mdash; all autonomously.
+                </p>
+                <div class="hero-btns">
+                    <a href="#tester" class="btn btn-saffron"><i class="fas fa-shield-halved"></i> Live Demo</a>
+                    <a href="#pipeline" class="btn btn-outline"><i class="fas fa-diagram-project"></i> How It Works</a>
+                </div>
+                <div class="hero-metrics">
+                    <div class="hm"><div class="hm-val saffron">11+</div><div class="hm-label">Indian Languages</div></div>
+                    <div class="hm"><div class="hm-val green">6</div><div class="hm-label">Supremacy Layers</div></div>
+                    <div class="hm"><div class="hm-val blue">&lt;600ms</div><div class="hm-label">Response Time</div></div>
+                </div>
+            </div>
+            <div class="hero-terminal">
+                <div class="term-bar">
+                    <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+                    <div class="term-title">KAVACH Honeypot &mdash; Live Intercept</div>
+                </div>
+                <div class="term-body">
+                    <div class="term-line"><span class="t-saffron">SCAMMER</span> <span class="t-muted">[Hinglish]:</span></div>
+                    <div class="term-line"><span class="t-white">"Aapka SBI account aaj band hoga. Abhi OTP share karo."</span></div>
+                    <div class="term-line">&nbsp;</div>
+                    <div class="term-line"><span class="t-green">KAVACH</span> <span class="t-muted">[Savitri Devi, 67]:</span></div>
+                    <div class="term-line"><span class="t-white">"Arrey, kaunsa account? Mera Canara wala ya SBI wala?"</span></div>
+                    <div class="term-line">&nbsp;</div>
+                    <div class="term-line"><span class="t-blue">INTEL</span> <span class="t-muted">extracted:</span> <span class="t-saffron">bank_fraud</span> <span class="t-muted">| conf:</span> <span class="t-green">0.97</span></div>
+                    <div class="term-line"><span class="t-muted">tactics:</span> <span class="t-saffron">authority, urgency, fear</span></div>
+                    <div class="term-line"><span class="t-muted">SHIELD:</span> <span class="t-blue">KAVACH-2026-A7X9</span> <span class="t-green">&#x25CF; ACTIVE</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pipeline" id="pipeline">
+        <div class="section-hdr">
+            <div class="section-badge">&#x26A1; Architecture</div>
+            <h2>6-Layer Supremacy Pipeline</h2>
+            <p>Every scam message flows through KAVACH's 6 supremacy layers in under 600ms.</p>
+        </div>
+        <div class="pipeline-flow">
+            <div class="pipe-step">
+                <div class="pipe-icon"><i class="fas fa-language"></i></div>
+                <h4>Language Probe</h4>
+                <p>Detects script &amp; language: Hindi, Tamil, Telugu, Bengali, Hinglish &amp; 10+ more</p>
+                <div class="pipe-time">&lt; 5ms</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-icon"><i class="fas fa-shield-virus"></i></div>
+                <h4>Scam Classifier</h4>
+                <p>Pattern + semantic dual-layer detection across 9 scam categories</p>
+                <div class="pipe-time">&lt; 20ms</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-icon"><i class="fas fa-user-secret"></i></div>
+                <h4>Persona Engine</h4>
+                <p>Culturally authentic victim persona matched to scam type + language</p>
+                <div class="pipe-time">&lt; 1ms</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-icon"><i class="fas fa-brain"></i></div>
+                <h4>Claude Brain</h4>
+                <p>Dynamic 6-module prompt &rarr; human-like response in scammer's language</p>
+                <div class="pipe-time">~400ms</div>
+            </div>
+            <div class="pipe-step">
+                <div class="pipe-icon"><i class="fas fa-file-shield"></i></div>
+                <h4>SHIELD Report</h4>
+                <p>Intel extracted, evidence logged, court-ready dossier built in real-time</p>
+                <div class="pipe-time">&lt; 5ms</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-hdr">
+            <div class="section-badge">&#x1F6E1;&#xFE0F; Supremacy Layers</div>
+            <h2>6 Layers No Competitor Has</h2>
+            <p>Every feature designed to detect, engage, extract, and report &mdash; saving real people from real scams.</p>
+        </div>
+        <div class="feat-grid">
+            <div class="feat-card">
+                <div class="feat-icon" style="background:linear-gradient(135deg,rgba(255,153,51,0.2),rgba(255,153,51,0.08)); color:var(--saffron);"><i class="fas fa-language"></i></div>
+                <h3>L2: Language Mirror</h3>
+                <p>3ms Unicode script detection for 11+ Indic scripts. Reply mirrors Hindi, Tamil, Telugu, Bengali, Gujarati, Kannada &amp; Hinglish instantly.</p>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(139,92,246,0.08)); color:#8B5CF6;"><i class="fas fa-masks-theater"></i></div>
+                <h3>L1: Identity Lock</h3>
+                <p>Actor-technique persona anchoring. Claude IS Savitri Devi &mdash; never breaks character even after 15 turns of aggressive scamming.</p>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon" style="background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.08)); color:#EF4444;"><i class="fas fa-shield-virus"></i></div>
+                <h3>L3: 3-Tier Response</h3>
+                <p>Claude &rarr; Smart Fallback (60+ pre-computed) &rarr; Base Fallback (11 languages). The endpoint NEVER returns 500.</p>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon" style="background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(16,185,129,0.08)); color:#10B981;"><i class="fas fa-fingerprint"></i></div>
+                <h3>L4: Intel Aggregator</h3>
+                <p>Set-based cumulative extraction across ALL turns. UPI IDs, phone numbers, PAN, Aadhaar, phishing URLs, IFSC codes, org names.</p>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon" style="background:linear-gradient(135deg,rgba(0,0,128,0.3),rgba(0,0,128,0.1)); color:#4D7FFF;"><i class="fas fa-chess-knight"></i></div>
+                <h3>L5: Engagement Arc</h3>
+                <p>10-15 turn stalling arsenal per persona. Unique tactic every turn. totalMessagesExchanged: 12 vs competitor's 4.</p>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08)); color:#F59E0B;"><i class="fas fa-satellite-dish"></i></div>
+                <h3>L6: GUVI Callback</h3>
+                <p>Police-report agentNotes, fires with ALL 5 fields populated. Non-blocking fire-and-forget. automated scorer sees real intel.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="tester" id="tester">
+        <div class="section-hdr">
+            <div class="section-badge">&#x1F9EA; Live Demo</div>
+            <h2>Test KAVACH Live</h2>
+            <p>Send a scam message and watch KAVACH engage, detect, and extract intelligence in real-time.</p>
+        </div>
+        <div class="tester-box">
+            <div class="tester-top">
+                <h3><i class="fas fa-satellite-dish"></i> KAVACH Honeypot Terminal</h3>
+                <div class="status-live"><div class="dot"></div> Endpoint Live</div>
+            </div>
+            <div class="tester-grid">
+                <div class="tester-left">
+                    <div class="input-row">
+                        <label>API Key</label>
+                        <input type="password" id="apiKey" value="fae26946fc2015d9bd6f1ddbb447e2f7" placeholder="x-api-key">
+                    </div>
+                    <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem; display:block;">Quick Presets</label>
+                    <div class="presets">
+                        <button class="preset-btn active" onclick="setPreset(this,'hindi_bank')">&#x1F3E6; Hindi Bank</button>
+                        <button class="preset-btn" onclick="setPreset(this,'tamil_otp')">&#x1F4F1; Tamil OTP</button>
+                        <button class="preset-btn" onclick="setPreset(this,'english_phish')">&#x1F3A3; English Phishing</button>
+                        <button class="preset-btn" onclick="setPreset(this,'hinglish_upi')">&#x1F4B3; Hinglish UPI</button>
+                        <button class="preset-btn" onclick="setPreset(this,'bengali_kyc')">&#x1F510; Bengali KYC</button>
+                        <button class="preset-btn" onclick="setPreset(this,'telugu_bank')">&#x1F3E6; Telugu Bank</button>
+                        <button class="preset-btn" onclick="setPreset(this,'job_scam')">&#x1F4BC; Job Scam</button>
+                    </div>
+                    <div class="input-row">
+                        <label>Scammer Message</label>
+                        <textarea id="scamMsg" placeholder="Type a scam message...">Aapka SBI account aaj band hoga jab tak aap apna KYC update nahi karte. Abhi apna OTP share karein warna account permanently block ho jayega.</textarea>
+                    </div>
+                    <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+                        <span class="btn-label"><i class="fas fa-paper-plane"></i> Send to KAVACH</span>
+                        <div class="spinner"></div>
+                    </button>
+                </div>
+                <div class="tester-right">
+                    <div class="conv-panel">
+                        <div class="conv-header">
+                            <h4><i class="fas fa-comments"></i> Conversation</h4>
+                            <button class="conv-clear" onclick="clearConv()"><i class="fas fa-trash-alt"></i> Clear</button>
+                        </div>
+                        <div class="conv-messages" id="convMessages">
+                            <div style="color:var(--text-muted); text-align:center; padding:3rem 1rem; font-size:0.8rem;" class="placeholder-msg">
+                                <i class="fas fa-shield-halved" style="font-size:2rem; display:block; margin-bottom:0.75rem; color:var(--saffron);"></i>
+                                Send a scam message to see KAVACH engage.<br>
+                                Multi-turn conversations supported.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="intel-panel" id="intelPanel" style="display:none;">
+            <div class="intel-box">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                    <h4 style="font-size:0.9rem; font-weight:600; color:var(--saffron);"><i class="fas fa-crosshairs"></i> Extracted Intelligence</h4>
+                    <span id="intelCaseId" style="font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--text-muted);"></span>
+                </div>
+                <div class="intel-grid" id="intelGrid"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="shield-section" id="shield">
+        <div class="section-hdr">
+            <div class="section-badge">&#x1F4CB; Evidence Engine</div>
+            <h2>SHIELD Report</h2>
+            <p>Scam History Intelligence Evidence Log &amp; Dossier &mdash; court-ready, law enforcement compatible.</p>
+        </div>
+        <div class="shield-box">
+            <div class="shield-header">
+                <h3><i class="fas fa-file-shield" style="color:var(--green-flag);"></i> SHIELD Evidence Dossier</h3>
+                <button class="btn-shield" id="shieldBtn" onclick="fetchShieldReport()" disabled>
+                    <i class="fas fa-download"></i> Fetch Report
+                </button>
+            </div>
+            <div class="shield-body">
+                <div class="shield-report-content" id="shieldContent">// SHIELD Report will appear here after a conversation.
+// Start a multi-turn conversation above to generate evidence.
+//
+// Report includes:
+// - Full conversation transcript
+// - Cumulative extracted intelligence
+// - Scammer tactics analysis
+// - Law enforcement summary
+// - cybercrime.gov.in reference (Helpline: 1930)</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats" id="stats">
+        <div class="section-hdr">
+            <div class="section-badge">&#x1F4CA; Impact</div>
+            <h2>The Problem We're Solving</h2>
+            <p>Every day, millions of Indians face scam calls. KAVACH fights back.</p>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-phone-volume"></i>
+                <div class="stat-number" id="statCalls">0</div>
+                <div class="stat-label">Scam Calls/Day in India</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-indian-rupee-sign"></i>
+                <div class="stat-number" id="statLoss">0</div>
+                <div class="stat-label">Crores Lost Daily</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-globe-asia"></i>
+                <div class="stat-number" id="statLangs">0</div>
+                <div class="stat-label">Languages Supported</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-bolt"></i>
+                <div class="stat-number" id="statSpeed">0</div>
+                <div class="stat-label">Avg Response (ms)</div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-tricolor"></div>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <h3>&#x1F6E1;&#xFE0F; KAVACH &#x0915;&#x0935;&#x091A;</h3>
+                <p>India's first agentic AI honeypot. Not just a shield &mdash; a counterattack against scammers. Built with Claude for the HCL GUVI India AI Impact Buildathon 2026.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Navigate</h4>
+                <ul>
+                    <li><a href="#pipeline">How It Works</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#tester">Live Demo</a></li>
+                    <li><a href="#shield">SHIELD Report</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>API Endpoints</h4>
+                <ul>
+                    <li><a href="/api/honeypot">POST /api/honeypot</a></li>
+                    <li><a href="/api/shield-report">GET /api/shield-report</a></li>
+                    <li><a href="/api/health">GET /api/health</a></li>
+                    <li><a href="/api/metrics">GET /api/metrics</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Report Scams</h4>
+                <ul>
+                    <li><a href="https://cybercrime.gov.in" target="_blank">cybercrime.gov.in</a></li>
+                    <li><a href="tel:1930">Helpline: 1930</a></li>
+                    <li><a href="https://github.com/tejash-sr/AGENTIC-POT" target="_blank">GitHub Repo</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>KAVACH v2.0 SUPREMACY &mdash; HCL GUVI India AI Impact Buildathon &middot; Bharat Mandapam, New Delhi &middot; Feb 16, 2026</p>
+        </div>
+    </footer>
+
+    <script>
+    // ====== STATE ======
+    let sessionId = 'KAVACH-' + Date.now().toString(36).toUpperCase();
+    let conversationHistory = [];
+    let lastMetadata = null;
+    let turnCount = 0;
+
+    const PRESETS = {
+        hindi_bank: "Aapka SBI account aaj band hoga jab tak aap apna KYC update nahi karte. Abhi apna OTP share karein warna account permanently block ho jayega.",
+        tamil_otp: "\u0B89\u0B99\u0BCD\u0B95\u0BB3\u0BCD \u0BB5\u0B99\u0BCD\u0B95\u0BBF \u0B95\u0BA3\u0B95\u0BCD\u0B95\u0BC1 \u0BAE\u0BC1\u0B9F\u0B95\u0BCD\u0B95\u0BAA\u0BCD\u0BAA\u0B9F\u0BC1\u0BAE\u0BCD. \u0B89\u0B9F\u0BA9\u0B9F\u0BBF\u0BAF\u0BBE\u0B95 OTP \u0BAA\u0B95\u0BBF\u0BB0\u0BB5\u0BC1\u0BAE\u0BCD. \u0B87\u0BB2\u0BCD\u0BB2\u0BC8\u0BAF\u0BC6\u0BA9\u0BBF\u0BB2\u0BCD \u0B95\u0BA3\u0B95\u0BCD\u0B95\u0BC1 \u0BA4\u0B9F\u0BC8 \u0B9A\u0BC6\u0BAF\u0BCD\u0BAF\u0BAA\u0BCD\u0BAA\u0B9F\u0BC1\u0BAE\u0BCD.",
+        english_phish: "URGENT: Your HDFC NetBanking has been compromised. Click http://hdfc-secure-verify.tk/login to verify your identity immediately or your account will be permanently suspended.",
+        hinglish_upi: "Congratulations! Aapko \u20B950,000 ka cashback mila hai. Claim karne ke liye apna UPI ID share karein: paytm@upi ya phonepe@ybl. Jaldi karein, offer sirf aaj ke liye hai!",
+        bengali_kyc: "\u0986\u09AA\u09A8\u09BE\u09B0 \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u09AC\u09CD\u09B2\u0995 \u09B9\u09AF\u09BC\u09C7 \u09AF\u09BE\u09AC\u09C7\u0964 \u098F\u0996\u09A8\u0987 KYC \u0986\u09AA\u09A1\u09C7\u099F \u0995\u09B0\u09C1\u09A8\u0964 \u0986\u09AA\u09A8\u09BE\u09B0 OTP \u09B6\u09C7\u09AF\u09BC\u09BE\u09B0 \u0995\u09B0\u09C1\u09A8 \u0985\u09A5\u09AC\u09BE \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u09AC\u09A8\u09CD\u09A7 \u09B9\u09AC\u09C7\u0964",
+        telugu_bank: "\u0C2E\u0C40 SBI \u0C16\u0C3E\u0C24\u0C3E \u0C28\u0C3F\u0C32\u0C41\u0C2A\u0C41 \u0C1A\u0C47\u0C2F\u0C2C\u0C21\u0C3F\u0C02\u0C26\u0C3F. \u0C35\u0C46\u0C02\u0C1F\u0C28\u0C47 OTP \u0C1A\u0C46\u0C2A\u0C4D\u0C2A\u0C02\u0C21\u0C3F \u0C32\u0C47\u0C15\u0C2A\u0C4B\u0C24\u0C47 \u0C16\u0C3E\u0C24\u0C3E \u0C36\u0C3E\u0C36\u0C4D\u0C35\u0C24\u0C02\u0C17\u0C3E \u0C2C\u0C4D\u0C32\u0C3E\u0C15\u0C4D \u0C05\u0C35\u0C41\u0C24\u0C41\u0C02\u0C26\u0C3F.",
+        job_scam: "Hi Ravi, we found your resume on Naukri.com. We have a work from home job offer - earn \u20B95000/day. No experience needed. Just pay \u20B9999 registration fee via UPI to hr@company.ybl"
+    };
+
+    function setPreset(btn, key) {
+        document.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById('scamMsg').value = PRESETS[key];
+    }
+
+    async function sendMessage() {
+        var btn = document.getElementById('sendBtn');
+        var msgInput = document.getElementById('scamMsg');
+        var text = msgInput.value.trim();
+        if (!text) return;
+
+        btn.classList.add('loading');
+        btn.disabled = true;
+        addMessage('scammer', text);
+
+        var payload = {
+            sessionId: sessionId,
+            message: { sender: 'scammer', text: text, timestamp: Date.now() },
+            conversationHistory: conversationHistory.slice(-10),
+            metadata: { channel: 'Web Demo', language: 'auto', locale: 'IN' }
+        };
+
+        try {
+            var apiKey = document.getElementById('apiKey').value;
+            var resp = await fetch('/api/honeypot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                body: JSON.stringify(payload)
+            });
+            var data = await resp.json();
+
+            if (data.reply) {
+                addMessage('kavach', data.reply, data.metadata);
+                conversationHistory.push({ sender: 'scammer', text: text, timestamp: Date.now() });
+                conversationHistory.push({ sender: 'user', text: data.reply, timestamp: Date.now() });
+                turnCount++;
+                lastMetadata = data.metadata;
+                updateIntelPanel(data.metadata);
+                document.getElementById('shieldBtn').disabled = false;
+                msgInput.value = '';
+            } else {
+                addMessage('kavach', 'Error: ' + JSON.stringify(data));
+            }
+        } catch (err) {
+            addMessage('kavach', 'Connection error: ' + err.message);
+        }
+
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }
+
+    function addMessage(type, text, meta) {
+        var conv = document.getElementById('convMessages');
+        var placeholder = conv.querySelector('.placeholder-msg');
+        if (placeholder) placeholder.remove();
+
+        var msg = document.createElement('div');
+        msg.className = 'msg ' + type;
+        var metaHtml = '';
+        if (meta) {
+            metaHtml = '<div class="msg-meta">' +
+                '<span>' + (meta.personaActive || '') + '</span>' +
+                '<span>' + (meta.detectedLanguage || '').replace(/_/g,' ') + '</span>' +
+                '<span>' + (meta.processingMs || 0) + 'ms</span>' +
+                '<span>conf: ' + ((meta.scamConfidence || 0) * 100).toFixed(0) + '%</span>' +
+                '</div>';
+        }
+        msg.innerHTML =
+            '<div class="msg-sender">' + (type === 'scammer' ? '\uD83D\uDD34 SCAMMER' : '\uD83D\uDEE1\uFE0F KAVACH AGENT') + '</div>' +
+            '<div class="msg-text">' + escapeHtml(text) + '</div>' +
+            metaHtml;
+        conv.appendChild(msg);
+        conv.scrollTop = conv.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function clearConv() {
+        sessionId = 'KAVACH-' + Date.now().toString(36).toUpperCase();
+        conversationHistory = [];
+        turnCount = 0;
+        lastMetadata = null;
+        document.getElementById('convMessages').innerHTML =
+            '<div style="color:var(--text-muted); text-align:center; padding:3rem 1rem; font-size:0.8rem;" class="placeholder-msg">' +
+            '<i class="fas fa-shield-halved" style="font-size:2rem; display:block; margin-bottom:0.75rem; color:var(--saffron);"></i>' +
+            'Send a scam message to see KAVACH engage.<br>Multi-turn conversations supported.</div>';
+        document.getElementById('intelPanel').style.display = 'none';
+        document.getElementById('shieldBtn').disabled = true;
+        document.getElementById('shieldContent').textContent = '// Start a conversation to generate a SHIELD report.';
+    }
+
+    function updateIntelPanel(meta) {
+        if (!meta) return;
+        document.getElementById('intelPanel').style.display = 'block';
+        document.getElementById('intelCaseId').textContent = meta.shieldCaseId || sessionId;
+
+        var intel = meta.extractedIntel || {};
+        var grid = document.getElementById('intelGrid');
+        var items = [
+            { label: 'Scam Type', value: (meta.scamType || 'analyzing...').replace(/_/g,' ').toUpperCase(), cls: 'green' },
+            { label: 'Confidence', value: ((meta.scamConfidence || 0) * 100).toFixed(0) + '%', cls: '' },
+            { label: 'Persona Active', value: meta.personaActive || '-', cls: '' },
+            { label: 'Language', value: (meta.detectedLanguage || '-').replace(/_/g,' '), cls: '' },
+            { label: 'Stage', value: (meta.conversationStage || '-'), cls: 'green' },
+            { label: 'Turn', value: '#' + (meta.turnCount || 0), cls: '' },
+            { label: 'Emotion Level', value: meta.emotion || '-', cls: meta.emotion === 'HIGH' ? 'green' : '' },
+            { label: 'Response Tier', value: 'Tier ' + (meta.responseTier || '?'), cls: '' },
+            { label: 'Stalling Tactic', value: (meta.stallingTactic || '-').replace(/_/g,' '), cls: '' },
+            { label: 'Phone Numbers', value: (intel.phoneNumbers||[]).join(', '), cls: '' },
+            { label: 'UPI IDs', value: (intel.upiIds||[]).join(', '), cls: '' },
+            { label: 'Phishing Links', value: (intel.phishingLinks||[]).join(', '), cls: '' }
+        ];
+
+        grid.innerHTML = items.map(function(i) {
+            return '<div class="intel-card"><h5>' + i.label + '</h5><div class="value ' + i.cls + '">' +
+                (i.value || '<span class="empty">None yet</span>') + '</div></div>';
+        }).join('');
+    }
+
+    async function fetchShieldReport() {
+        var caseId = lastMetadata && lastMetadata.shieldCaseId;
+        if (!caseId) return;
+        var apiKey = document.getElementById('apiKey').value;
+        try {
+            var resp = await fetch('/api/shield-report?caseId=' + encodeURIComponent(caseId), {
+                headers: { 'x-api-key': apiKey }
+            });
+            var data = await resp.json();
+            if (data.report) {
+                document.getElementById('shieldContent').textContent = JSON.stringify(data.report, null, 2);
+            } else {
+                document.getElementById('shieldContent').textContent = JSON.stringify(data, null, 2);
+            }
+        } catch (err) {
+            document.getElementById('shieldContent').textContent = 'Error fetching report: ' + err.message;
+        }
+    }
+
+    function animateVal(id, end, duration, suffix) {
+        var el = document.getElementById(id);
+        var startTime = performance.now();
+        function update(now) {
+            var p = Math.min((now - startTime) / duration, 1);
+            var ease = 1 - Math.pow(1 - p, 4);
+            el.textContent = Math.floor(end * ease).toLocaleString() + (suffix || '');
+            if (p < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+            if (e.isIntersecting) {
+                animateVal('statCalls', 500000, 2000, '+');
+                animateVal('statLoss', 60, 1800, '');
+                animateVal('statLangs', 10, 1200, '+');
+                animateVal('statSpeed', 487, 1500, '');
+                observer.disconnect();
+            }
+        });
+    }, { threshold: 0.3 });
+    observer.observe(document.querySelector('.stats'));
+
+    document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+        a.addEventListener('click', function(e) {
+            e.preventDefault();
+            var t = document.querySelector(a.getAttribute('href'));
+            if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    document.getElementById('scamMsg').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    </script>
+</body>
+</html>
