@@ -1,19 +1,45 @@
 /**
  * KAVACH — 3-Tier Response Chain (SUPREMACY LAYER 3)
- * Tier 1: Gemini Flash (full LLM, increased timeout for quality)
+ * Tier 1: Gemini Flash → Falls back to alternate models on rate limit
  * Tier 2: Pre-computed smart fallbacks with ROTATION (never repeat)
  * Tier 3: Base language fallback (always works)
  *
  * THE ENDPOINT NEVER DIES. ONE 500 error = permanent score deduction.
+ * RATE LIMIT HANDLING: Primary → Secondary → Tertiary models
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
-// Track used fallbacks per session to prevent repetition
-const usedFallbacks = new Map();
+// Model cascade for rate limit handling
+const MODELS = [
+  'gemini-2.0-flash-lite',      // Primary: Fast, efficient
+  'gemini-1.5-flash',           // Secondary: Stable fallback  
+  'gemini-1.5-flash-8b',        // Tertiary: Lower quota usage
+];
+
+let currentModelIndex = 0;
+let lastRateLimitTime = 0;
+
+// Get current model with automatic rotation on rate limit
+function getModel() {
+  // Reset to primary model after 60 seconds
+  if (Date.now() - lastRateLimitTime > 60000) {
+    currentModelIndex = 0;
+  }
+  return genAI.getGenerativeModel({ model: MODELS[currentModelIndex] });
+}
+
+// Switch to next model on rate limit
+function rotateModel() {
+  lastRateLimitTime = Date.now();
+  currentModelIndex = (currentModelIndex + 1) % MODELS.length;
+  console.log(`[KAVACH] Rate limit hit. Rotating to model: ${MODELS[currentModelIndex]}`);
+}
+
+// Track used fallbacks AND LLM responses per session to prevent ALL repetition
+const usedResponses = new Map();
 
 // ──────────────────────────────────────────────────
 // TIER 2: Pre-computed smart fallbacks with MULTIPLE OPTIONS
@@ -548,96 +574,164 @@ function getRotatedFallback(options, sessionId) {
   if (typeof options === 'string') return options; // Old format compatibility
   
   // Get or create used set for this session
-  if (!usedFallbacks.has(sessionId)) {
-    usedFallbacks.set(sessionId, new Set());
+  if (!usedResponses.has(sessionId)) {
+    usedResponses.set(sessionId, new Set());
   }
-  const used = usedFallbacks.get(sessionId);
+  const used = usedResponses.get(sessionId);
   
-  // Find unused options
-  const available = options.filter((_, i) => !used.has(i));
+  // Find unused options that haven't been used before (including similar ones)
+  const available = options.filter(opt => {
+    // Check if this exact response or very similar was used
+    for (const usedResp of used) {
+      if (opt === usedResp) return false;
+      // Check for similar start (first 30 chars)
+      if (opt.slice(0, 30).toLowerCase() === usedResp.slice(0, 30).toLowerCase()) return false;
+    }
+    return true;
+  });
   
-  // If all used, reset and use all again
+  // If all used, clear and start fresh
   if (available.length === 0) {
+    // But keep tracking LLM responses, only clear fallback tracking
+    const llmResponses = [...used].filter(r => r.startsWith('__LLM__'));
     used.clear();
-    const idx = Math.floor(Math.random() * options.length);
-    used.add(idx);
-    return options[idx];
+    llmResponses.forEach(r => used.add(r));
+    return options[Math.floor(Math.random() * options.length)];
   }
   
   // Pick random from available
-  const randomAvailable = available[Math.floor(Math.random() * available.length)];
-  const idx = options.indexOf(randomAvailable);
-  used.add(idx);
-  return randomAvailable;
+  const selected = available[Math.floor(Math.random() * available.length)];
+  used.add(selected);
+  return selected;
 }
 
 /**
- * Get response using 3-tier chain. Gemini races against timeout.
- * If Gemini is slow → smart fallback. If no match → base fallback.
+ * Check if an LLM response is too similar to previous responses
+ */
+function isResponseTooSimilar(newResponse, sessionId) {
+  if (!usedResponses.has(sessionId)) return false;
+  const used = usedResponses.get(sessionId);
+  
+  const newLower = newResponse.toLowerCase();
+  const newWords = new Set(newLower.split(/\s+/).filter(w => w.length > 3));
+  
+  for (const usedResp of used) {
+    const usedLower = usedResp.toLowerCase();
+    
+    // Check exact match
+    if (newLower === usedLower) return true;
+    
+    // Check if starts the same way (first 40 chars)
+    if (newLower.slice(0, 40) === usedLower.slice(0, 40)) return true;
+    
+    // Check word overlap (if >70% words are same, it's too similar)
+    const usedWords = new Set(usedLower.split(/\s+/).filter(w => w.length > 3));
+    const overlap = [...newWords].filter(w => usedWords.has(w)).length;
+    const similarity = overlap / Math.max(newWords.size, 1);
+    if (similarity > 0.7) return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Track a used response (both LLM and fallback)
+ */
+function trackUsedResponse(response, sessionId) {
+  if (!usedResponses.has(sessionId)) {
+    usedResponses.set(sessionId, new Set());
+  }
+  usedResponses.get(sessionId).add(response);
+}
+
+/**
+ * Get response using 3-tier chain with MODEL ROTATION on rate limit.
+ * If Gemini fails → try next model → smart fallback → base fallback.
  * THE ENDPOINT NEVER DIES.
- *
- * @param {string} systemPrompt - Identity-locked system prompt
- * @param {Array} messages - Message history
- * @param {Object} session - Current session object
- * @param {Object} languageData - Mirror engine result
- * @returns {Object} { reply, tier, ms }
  */
 async function getResponseTiered(systemPrompt, messages, session, languageData) {
   const startMs = Date.now();
   const sessionId = session.sessionId || 'default';
 
-  // Start Gemini call immediately (async — don't await yet)
-  const geminiCall = (async () => {
-    try {
-      // Convert messages to Gemini chat history format
-      const history = [];
-      let lastUserMsg = '';
-      
-      for (let i = 0; i < messages.length - 1; i++) {
-        const msg = messages[i];
-        if (msg.role === 'user') {
-          history.push({ role: 'user', parts: [{ text: msg.content }] });
-        } else if (msg.role === 'assistant') {
-          history.push({ role: 'model', parts: [{ text: msg.content }] });
+  // Try up to 3 models on rate limit
+  let llmResponse = null;
+  let lastError = null;
+  
+  for (let attempt = 0; attempt < MODELS.length; attempt++) {
+    const model = getModel();
+    
+    const geminiCall = (async () => {
+      try {
+        // Convert messages to Gemini chat history format
+        const history = [];
+        let lastUserMsg = '';
+        
+        for (let i = 0; i < messages.length - 1; i++) {
+          const msg = messages[i];
+          if (msg.role === 'user') {
+            history.push({ role: 'user', parts: [{ text: msg.content }] });
+          } else if (msg.role === 'assistant') {
+            history.push({ role: 'model', parts: [{ text: msg.content }] });
+          }
         }
+        
+        // Last message is always user (current scammer message)
+        lastUserMsg = messages[messages.length - 1]?.content || 'Hello';
+        
+        const chat = model.startChat({
+          history,
+          generationConfig: {
+            maxOutputTokens: 150,
+            temperature: 0.92,  // Higher for more variety
+          },
+        });
+        
+        const fullPrompt = systemPrompt + '\n\nScammer says: "' + lastUserMsg + '"\n\nRespond as your persona (1-2 sentences, conversational, DO NOT repeat anything you said before):';
+        const result = await chat.sendMessage(fullPrompt);
+        const text = result.response.text().trim();
+        
+        // Validate response
+        if (!text || text.length < 10) {
+          return { ok: false, error: 'Response too short' };
+        }
+        
+        return { ok: true, text };
+      } catch (e) {
+        const errMsg = e.message || '';
+        // Check for rate limit errors
+        if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('rate') || errMsg.includes('Resource has been exhausted')) {
+          return { ok: false, rateLimited: true, error: errMsg };
+        }
+        return { ok: false, error: errMsg };
       }
-      
-      // Last message is always user (current scammer message)
-      lastUserMsg = messages[messages.length - 1]?.content || 'Hello';
-      
-      const chat = model.startChat({
-        history,
-        generationConfig: {
-          maxOutputTokens: 150,   // Increased for better quality
-          temperature: 0.9,      // Higher for more natural variation
-        },
-      });
-      
-      const fullPrompt = systemPrompt + '\n\nScammer says: "' + lastUserMsg + '"\n\nRespond as your persona (1-2 sentences, conversational):';
-      const result = await chat.sendMessage(fullPrompt);
-      const text = result.response.text().trim();
-      
-      // Validate response is not empty or too short
-      if (!text || text.length < 10) {
-        return { ok: false, error: 'Response too short' };
-      }
-      
-      return { ok: true, text };
-    } catch (e) {
-      return { ok: false, error: e.message };
+    })();
+
+    // Race against timeout
+    const timeout = new Promise(resolve =>
+      setTimeout(() => resolve({ ok: false, timedOut: true }), 6000)
+    );
+
+    const result = await Promise.race([geminiCall, timeout]);
+    
+    if (result.rateLimited) {
+      rotateModel();
+      lastError = result.error;
+      continue; // Try next model
     }
-  })();
-
-  // Race Gemini against 8 second timeout (increased for quality)
-  const timeout = new Promise(resolve =>
-    setTimeout(() => resolve({ ok: false, timedOut: true }), 8000)
-  );
-
-  const result = await Promise.race([geminiCall, timeout]);
-
-  // TIER 1: Gemini won the race with valid response
-  if (result.ok && result.text && result.text.length >= 10) {
-    return { reply: result.text, tier: 1, ms: Date.now() - startMs };
+    
+    if (result.ok && result.text && result.text.length >= 10) {
+      // Check if response is too similar to previous ones
+      if (isResponseTooSimilar(result.text, sessionId)) {
+        // Try to get a different response by adding variety instruction
+        continue;
+      }
+      
+      trackUsedResponse(result.text, sessionId);
+      return { reply: result.text, tier: 1, ms: Date.now() - startMs, model: MODELS[currentModelIndex] };
+    }
+    
+    lastError = result.error || 'Unknown error';
+    break; // Non-rate-limit error, go to fallback
   }
 
   // TIER 2: Smart fallback with rotation (never repeat)
@@ -645,10 +739,9 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
   const stage = session.stage || 'GREETING';
   let lang = languageData?.language || 'english';
   
-  // Map 'hinglish' or undefined to appropriate fallback
   if (!lang || lang === 'unknown') lang = 'english';
 
-  // Check if scammer was aggressive (shouting, threats)
+  // Check if scammer was aggressive
   const wasAggressive = session.emotionHist && 
     (session.emotionHist.includes('HIGH') || session.emotionHist.includes('aggressive'));
   
@@ -657,19 +750,25 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
     ? [`aggressive:ANY:${lang}`, `aggressive:ANY:english`, `aggressive:ANY:hinglish`]
     : [
         `${scamType}:${stage}:${lang}`,
+        `${scamType}:RAPPORT:${lang}`,  // Added RAPPORT as common fallback
         `${scamType}:GREETING:${lang}`,
         `${scamType}:${stage}:english`,
+        `${scamType}:RAPPORT:english`,
         `${scamType}:GREETING:english`,
         `bank_fraud:${stage}:${lang}`,
+        `bank_fraud:RAPPORT:${lang}`,
         `bank_fraud:GREETING:${lang}`,
         `bank_fraud:GREETING:english`,
+        `otp_fraud:EXTRACTION:${lang}`,  // OTP is common
+        `otp_fraud:EXTRACTION:english`,
       ];
 
   for (const key of keysToTry) {
     const options = SMART_FALLBACKS[key];
     if (options) {
       const fallback = getRotatedFallback(options, sessionId);
-      if (fallback) {
+      if (fallback && !isResponseTooSimilar(fallback, sessionId)) {
+        trackUsedResponse(fallback, sessionId);
         return { reply: fallback, tier: 2, ms: Date.now() - startMs };
       }
     }
@@ -679,6 +778,10 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
   const baseOptions = BASE_FALLBACKS[lang] || BASE_FALLBACKS.english || BASE_FALLBACKS.hinglish;
   const baseFallback = getRotatedFallback(baseOptions, sessionId + '_base');
   
+  if (baseFallback) {
+    trackUsedResponse(baseFallback, sessionId);
+  }
+  
   return {
     reply: baseFallback || "Sorry, I didn't understand... can you repeat please?",
     tier: 3,
@@ -686,11 +789,11 @@ async function getResponseTiered(systemPrompt, messages, session, languageData) 
   };
 }
 
-// Clean up old session fallback tracking (memory management)
+// Clean up old session tracking (memory management)
 setInterval(() => {
-  if (usedFallbacks.size > 1000) {
-    usedFallbacks.clear();
+  if (usedResponses.size > 1000) {
+    usedResponses.clear();
   }
 }, 60000);
 
-module.exports = { getResponseTiered, SMART_FALLBACKS, BASE_FALLBACKS };
+module.exports = { getResponseTiered, SMART_FALLBACKS, BASE_FALLBACKS, rotateModel };

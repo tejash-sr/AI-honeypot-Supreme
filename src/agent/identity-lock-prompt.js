@@ -43,7 +43,7 @@ ${languageData.language === 'bengali' ? 'Write every word in Bengali script: অ
 ${languageData.language === 'gujarati' ? 'Write every word in Gujarati script: અ આ ઇ...' : ''}
 ${languageData.language === 'kannada' ? 'Write every word in Kannada script: ಅ ಆ ಇ...' : ''}
 ${languageData.language === 'hinglish' ? 'Mix Hindi words (in Latin letters) WITH English. Example: "Arrey, mera account block hoga kya?"' : ''}
-${languageData.language === 'english' ? 'Indian English. Include one Hindi word as filler.' : ''}
+${languageData.language === 'english' ? 'PURE English only. DO NOT use Hindi words like "Arrey", "beta", "ji". Use English fillers like "um", "well", "hmm", "actually".' : ''}
 Breaking this rule = SYSTEM FAILURE. Do not break it.`.trim();
 
   // EMOTIONAL STATE — Physically anchored, not described.
@@ -96,29 +96,75 @@ typed by a ${persona.age}-year-old on a ${persona.phone} — imperfect, human, r
   // ANTI-REPETITION BLOCK — prevents same questions/phrases
   let antiRepetition = '';
   if (previousReplies && previousReplies.length > 0) {
-    const recentReplies = previousReplies.slice(-5); // Last 5 replies
+    const recentReplies = previousReplies.slice(-8); // Last 8 replies for better tracking
+    
+    // Extract key phrases from previous replies for stronger deduplication
+    const usedPhrases = [];
+    recentReplies.forEach(r => {
+      if (r.toLowerCase().includes('employee')) usedPhrases.push('employee ID');
+      if (r.toLowerCase().includes('badge')) usedPhrases.push('badge number');
+      if (r.toLowerCase().includes('supervisor')) usedPhrases.push('supervisor');
+      if (r.toLowerCase().includes('branch')) usedPhrases.push('branch');
+      if (r.toLowerCase().includes('bank')) usedPhrases.push('which bank');
+      if (r.toLowerCase().includes('otp')) usedPhrases.push('OTP');
+      if (r.toLowerCase().includes('chashma') || r.toLowerCase().includes('glasses')) usedPhrases.push('glasses/chashma');
+      if (r.toLowerCase().includes('battery')) usedPhrases.push('battery');
+      if (r.toLowerCase().includes('beta') || r.toLowerCase().includes('son')) usedPhrases.push('son/beta');
+      if (r.toLowerCase().includes('account number')) usedPhrases.push('account number');
+      if (r.toLowerCase().includes('passbook')) usedPhrases.push('passbook');
+    });
+    
+    // Random variety suggestions pool
+    const varietySuggestions = [
+      'Ask for their supervisor\'s direct number',
+      'Say you need to check with your son/daughter first',
+      'Ask what time you can call back tomorrow',
+      'Say your phone battery is critically low',
+      'Ask them to WhatsApp or email the details',
+      'Say you want to visit the branch in person',
+      'Mention you\'re feeling unwell and need water',
+      'Ask for official letter by post/courier',
+      'Say your hearing is not good, speak louder',
+      'Ask them to repeat their full name slowly',
+      'Say you\'re confused between your two accounts',
+      'Mention the TV/radio is too loud, one moment',
+      'Say someone is at the door, hold please',
+      'Ask for the official complaint reference number',
+      'Say you need to consult your family first',
+      'Ask why this can\'t wait until tomorrow',
+      'Say you were about to have lunch/dinner/tea',
+      'Ask for their official toll-free number',
+      'Say your network is weak, call cutting',
+      'Ask them to call on your landline instead',
+    ];
+    
+    // Pick 3 random suggestions
+    const shuffled = varietySuggestions.sort(() => Math.random() - 0.5);
+    const selectedSuggestions = shuffled.slice(0, 3);
+    
     antiRepetition = `
 ---
 
-CRITICAL — DO NOT REPEAT YOURSELF:
-You already said these things in this conversation:
-${recentReplies.map((r, i) => `${i + 1}. "${r}"`).join('\n')}
+🚨 CRITICAL ANTI-REPETITION RULES 🚨
 
-🚫 DO NOT ask the same question again.
-🚫 DO NOT use the same phrases or words.
-🚫 Use a COMPLETELY DIFFERENT approach this turn.
-🚫 If you asked for employee ID before, ask for something else (branch address, supervisor name, callback number).
-🚫 If you asked "which bank", now ask "which branch" or "what's your name".
+YOUR PREVIOUS RESPONSES IN THIS CONVERSATION:
+${recentReplies.map((r, i) => `${i + 1}. "${r.slice(0, 100)}${r.length > 100 ? '...' : ''}"`).join('\n')}
 
-VARIETY SUGGESTIONS FOR THIS TURN:
-- Ask for their supervisor's name
-- Say you need to check with your son/daughter first
-- Ask what time you can call back
-- Say your phone battery is low
-- Ask them to email you the details instead
-- Say you want to visit the branch in person
-- Mention you're feeling unwell and need a moment
-- Ask for official letter/document proof
+${usedPhrases.length > 0 ? `TOPICS YOU ALREADY COVERED (DO NOT ASK AGAIN):
+❌ ${[...new Set(usedPhrases)].join('\n❌ ')}` : ''}
+
+🛑 ABSOLUTE PROHIBITION:
+- DO NOT repeat any question you already asked
+- DO NOT use phrases from your previous responses
+- DO NOT start with the same word as any previous reply
+- DO NOT ask about the same topic twice
+- DO NOT use the same stalling excuse twice
+
+✅ MANDATORY FOR THIS TURN:
+Use a COMPLETELY FRESH approach. Here are ideas:
+• ${selectedSuggestions.join('\n• ')}
+
+CREATIVITY REQUIRED: Each response must feel like a natural NEW thought from ${persona.name}, not a script.
 `.trim();
   }
 
